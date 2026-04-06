@@ -1,0 +1,58 @@
+[
+    {
+        "merged": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-mergeDebugResources-47:\\layout\\activity_login.xml",
+        "source": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-main-50:\\layout\\activity_login.xml"
+    },
+    {
+        "merged": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-mergeDebugResources-47:\\layout\\fragment_new_request.xml",
+        "source": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-main-50:\\layout\\fragment_new_request.xml"
+    },
+    {
+        "merged": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-mergeDebugResources-47:\\layout\\item_reservation.xml",
+        "source": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-main-50:\\layout\\item_reservation.xml"
+    },
+    {
+        "merged": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-mergeDebugResources-47:\\layout\\fragment_profile.xml",
+        "source": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-main-50:\\layout\\fragment_profile.xml"
+    },
+    {
+        "merged": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-mergeDebugResources-47:\\layout\\nav_header.xml",
+        "source": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-main-50:\\layout\\nav_header.xml"
+    },
+    {
+        "merged": "com.sgr.app-mergeDebugResources-47:/layout/fragment_audit.xml",
+        "source": "com.sgr.app-main-50:/layout/fragment_audit.xml"
+    },
+    {
+        "merged": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-mergeDebugResources-47:\\layout\\fragment_dashboard.xml",
+        "source": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-main-50:\\layout\\fragment_dashboard.xml"
+    },
+    {
+        "merged": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-mergeDebugResources-47:\\layout\\fragment_equipment.xml",
+        "source": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-main-50:\\layout\\fragment_equipment.xml"
+    },
+    {
+        "merged": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-mergeDebugResources-47:\\layout\\fragment_users.xml",
+        "source": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-main-50:\\layout\\fragment_users.xml"
+    },
+    {
+        "merged": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-mergeDebugResources-47:\\layout\\fragment_list.xml",
+        "source": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-main-50:\\layout\\fragment_list.xml"
+    },
+    {
+        "merged": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-mergeDebugResources-47:\\layout\\activity_admin.xml",
+        "source": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-main-50:\\layout\\activity_admin.xml"
+    },
+    {
+        "merged": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-mergeDebugResources-47:\\layout\\item_generic.xml",
+        "source": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-main-50:\\layout\\item_generic.xml"
+    },
+    {
+        "merged": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-mergeDebugResources-47:\\layout\\activity_user.xml",
+        "source": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-main-50:\\layout\\activity_user.xml"
+    },
+    {
+        "merged": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-mergeDebugResources-47:\\layout\\fragment_spaces.xml",
+        "source": "C:\\Users\\leona\\.gradle\\daemon\\8.7\\com.sgr.app-main-50:\\layout\\fragment_spaces.xml"
+    }
+]

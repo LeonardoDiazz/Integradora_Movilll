@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/nav_users" android:title="Usuarios" android:icon="@android:drawable/ic_menu_manage"/>
+    <item android:id="@+id/nav_spaces" android:title="Espacios" android:icon="@android:drawable/ic_menu_mapmode"/>
+    <item android:id="@+id/nav_equipment" android:title="Inventario" android:icon="@android:drawable/ic_menu_sort_by_size"/>
+    <item android:id="@+id/nav_reservations" android:title="Reservaciones" android:icon="@android:drawable/ic_menu_agenda"/>
+    <item android:id="@+id/nav_audit" android:title="Auditoría" android:icon="@android:drawable/ic_menu_recent_history"/>
+    <item android:id="@+id/nav_profile" android:title="Perfil" android:icon="@android:drawable/ic_menu_my_calendar"/>
+    <item android:id="@+id/nav_logout" android:title="Cerrar sesión" android:icon="@android:drawable/ic_lock_power_off"/>
+</menu>
