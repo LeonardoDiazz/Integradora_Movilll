@@ -27,6 +27,9 @@ interface ApiService {
         @Query("search") search: String = ""
     ): Response<PageResponse<User>>
 
+    @GET("api/users/{id}")
+    suspend fun getUser(@Path("id") id: Long): Response<User>
+
     @POST("api/users")
     suspend fun createUser(@Body request: CreateUserRequest): Response<ResponseBody>
 
@@ -48,8 +51,17 @@ interface ApiService {
     @GET("api/spaces/{id}")
     suspend fun getSpace(@Path("id") id: Long): Response<Space>
 
+    @POST("api/spaces")
+    suspend fun createSpace(@Body request: CreateSpaceRequest): Response<ResponseBody>
+
+    @PUT("api/spaces/{id}")
+    suspend fun updateSpace(@Path("id") id: Long, @Body request: CreateSpaceRequest): Response<ResponseBody>
+
     @PATCH("api/spaces/{id}/toggle-status")
     suspend fun toggleSpaceStatus(@Path("id") id: Long): Response<ResponseBody>
+
+    @GET("api/spaces/{id}/history")
+    suspend fun getSpaceHistory(@Path("id") id: Long): Response<List<HistoryItem>>
 
     // EQUIPMENT
     @GET("api/equipments")
@@ -63,8 +75,17 @@ interface ApiService {
     @GET("api/equipments/{id}")
     suspend fun getEquipment(@Path("id") id: Long): Response<Equipment>
 
+    @POST("api/equipments")
+    suspend fun createEquipment(@Body request: CreateEquipmentRequest): Response<ResponseBody>
+
+    @PUT("api/equipments/{id}")
+    suspend fun updateEquipment(@Path("id") id: Long, @Body request: CreateEquipmentRequest): Response<ResponseBody>
+
     @PATCH("api/equipments/{id}/toggle-status")
     suspend fun toggleEquipmentStatus(@Path("id") id: Long): Response<ResponseBody>
+
+    @GET("api/equipments/{id}/history")
+    suspend fun getEquipmentHistory(@Path("id") id: Long): Response<List<HistoryItem>>
 
     // RESERVATIONS (admin)
     @GET("api/reservations")
@@ -95,8 +116,21 @@ interface ApiService {
         @Query("filter") filter: String = ""
     ): Response<PageResponse<Reservation>>
 
+    @GET("api/reservations/my/{id}")
+    suspend fun getMyReservation(
+        @Path("id") id: Long,
+        @Query("userId") userId: Long
+    ): Response<Reservation>
+
     @POST("api/reservations")
     suspend fun createReservation(@Body request: CreateReservationRequest): Response<Reservation>
+
+    @PUT("api/reservations/my/{id}")
+    suspend fun updateMyReservation(
+        @Path("id") id: Long,
+        @Query("userId") userId: Long,
+        @Body request: UpdateReservationRequest
+    ): Response<ResponseBody>
 
     @PATCH("api/reservations/my/{id}/cancel")
     suspend fun cancelMyReservation(

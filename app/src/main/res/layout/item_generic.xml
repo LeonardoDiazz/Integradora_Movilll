@@ -61,6 +61,49 @@
             android:textSize="13sp"
             android:layout_marginBottom="10dp"/>
 
+        <!-- Primary actions row: Ver + Editar + Historial -->
+        <LinearLayout
+            android:id="@+id/layoutPrimaryActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="6dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnView"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:text="Ver"
+                android:textSize="11sp"
+                android:backgroundTint="#1D4ED8"
+                style="@style/Widget.MaterialComponents.Button"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEdit"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:text="Editar"
+                android:textSize="11sp"
+                android:backgroundTint="#D97706"
+                style="@style/Widget.MaterialComponents.Button"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnHistory"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:text="Historial"
+                android:textSize="11sp"
+                android:backgroundTint="#7C3AED"
+                android:visibility="gone"
+                style="@style/Widget.MaterialComponents.Button"/>
+        </LinearLayout>
+
+        <!-- Secondary action: Toggle -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnToggle"
             android:layout_width="wrap_content"

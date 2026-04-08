@@ -25,11 +25,6 @@ class LoginActivity : AppCompatActivity() {
 
         session = SessionManager(this)
 
-        if (session.isLoggedIn) {
-            navigateByRole(session.userRole)
-            return
-        }
-
         binding.btnLogin.setOnClickListener { doLogin() }
     }
 

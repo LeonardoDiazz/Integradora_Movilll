@@ -1,113 +1,426 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/gray_light"
-    android:padding="16dp">
+    android:orientation="vertical"
+    android:background="@color/gray_light">
 
+    <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="12dp"
+        android:background="@color/white">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nueva Solicitud"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Completa los pasos para reservar un recurso."
+                android:textSize="13sp"
+                android:textColor="@color/gray_text"
+                android:layout_marginTop="2dp"/>
+        </LinearLayout>
+
+        <!-- Step indicators -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <View
+                android:id="@+id/step1Indicator"
+                android:layout_width="48dp"
+                android:layout_height="8dp"
+                android:background="@drawable/bg_step_active"
+                android:layout_marginEnd="6dp"/>
+
+            <View
+                android:id="@+id/step2Indicator"
+                android:layout_width="40dp"
+                android:layout_height="8dp"
+                android:background="@drawable/bg_step_inactive"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- ===== PASO 1 ===== -->
+    <LinearLayout
+        android:id="@+id/layoutStep1"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Nueva Solicitud de Reserva" android:textSize="18sp" android:textStyle="bold"
-            android:textColor="@color/text_primary" android:layout_marginBottom="16dp"/>
+        <!-- Tabs + Search card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_margin="12dp"
+            android:background="@drawable/bg_card_selectable"
+            android:padding="14dp">
 
-        <androidx.cardview.widget.CardView
-            xmlns:app="http://schemas.android.com/apk/res-auto"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="16dp">
+            <!-- Tab buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:orientation="horizontal"
+                android:background="@drawable/bg_tabs_container"
+                android:padding="4dp"
+                android:layout_marginBottom="12dp">
 
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="vertical" android:padding="16dp">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnTabSpace"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="🏢 Espacios"
+                    android:textSize="13sp"
+                    android:backgroundTint="@color/green_primary"
+                    android:textColor="@color/white"
+                    style="@style/Widget.MaterialComponents.Button"/>
 
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="Tipo de recurso" android:textSize="13sp" android:textStyle="bold"
-                    android:textColor="@color/text_primary" android:layout_marginBottom="6dp"/>
-
-                <Spinner android:id="@+id/spinnerResourceType"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp" android:background="@drawable/bg_spinner"/>
-
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="Recurso" android:textSize="13sp" android:textStyle="bold"
-                    android:textColor="@color/text_primary" android:layout_marginBottom="6dp"/>
-
-                <Spinner android:id="@+id/spinnerResource"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp" android:background="@drawable/bg_spinner"/>
-
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnTabEquipment"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="📦 Equipos"
+                    android:textSize="13sp"
+                    android:backgroundTint="#F1F5F9"
+                    android:textColor="@color/gray_text"
+                    style="@style/Widget.MaterialComponents.Button"/>
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
 
-        <androidx.cardview.widget.CardView
-            xmlns:app="http://schemas.android.com/apk/res-auto"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            app:cardCornerRadius="12dp" app:cardElevation="4dp">
+            <!-- Search -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:hintEnabled="false"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etSearch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Buscar espacio..."
+                    android:inputType="text"/>
+            </com.google.android.material.textfield.TextInputLayout>
 
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="vertical" android:padding="16dp">
+            <!-- Student notice -->
+            <TextView
+                android:id="@+id/tvStudentNotice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="ℹ Mostrando solo recursos autorizados para estudiantes."
+                android:textSize="12sp"
+                android:textColor="#15803D"
+                android:textStyle="bold"
+                android:background="@drawable/bg_notice_green"
+                android:padding="10dp"
+                android:layout_marginTop="10dp"
+                android:visibility="gone"/>
+        </LinearLayout>
 
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="Fecha (YYYY-MM-DD)" android:textSize="13sp" android:textStyle="bold"
-                    android:textColor="@color/text_primary" android:layout_marginBottom="6dp"/>
+        <!-- Resource list -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerResources"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:paddingHorizontal="12dp"
+            android:clipToPadding="false"/>
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etDate" android:layout_width="match_parent"
-                        android:layout_height="wrap_content" android:hint="2026-04-10" android:inputType="date"/>
-                </com.google.android.material.textfield.TextInputLayout>
+        <TextView
+            android:id="@+id/tvEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="No se encontraron recursos disponibles."
+            android:textSize="14sp"
+            android:textColor="@color/gray_text"
+            android:visibility="gone"/>
 
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:layout_marginBottom="12dp">
+        <!-- Pagination -->
+        <LinearLayout
+            android:id="@+id/layoutPagination"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="4dp">
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:layout_marginEnd="8dp"
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etStartTime" android:layout_width="match_parent"
-                            android:layout_height="wrap_content" android:hint="Hora inicio (07:00)"
-                            android:inputType="time"/>
-                    </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPrev"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="‹"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:textSize="16sp"/>
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:layout_marginStart="8dp"
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etEndTime" android:layout_width="match_parent"
-                            android:layout_height="wrap_content" android:hint="Hora fin (22:00)"
-                            android:inputType="time"/>
-                    </com.google.android.material.textfield.TextInputLayout>
+            <TextView
+                android:id="@+id/tvPage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pág 1"
+                android:textSize="13sp"
+                android:layout_marginHorizontal="12dp"
+                android:textColor="@color/gray_text"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNext"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="›"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:textSize="16sp"/>
+        </LinearLayout>
+
+        <!-- Footer step 1 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:padding="12dp"
+            android:background="@color/white">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnContinue"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:text="Continuar →"
+                android:backgroundTint="@color/green_primary"
+                android:textSize="14sp"
+                android:enabled="false"
+                style="@style/Widget.MaterialComponents.Button"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- ===== PASO 2 ===== -->
+    <ScrollView
+        android:id="@+id/layoutStep2"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <!-- Banner recurso seleccionado -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_banner_dark"
+                android:padding="18dp"
+                android:layout_marginBottom="12dp">
+
+                <TextView
+                    android:id="@+id/tvBannerIcon"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:gravity="center"
+                    android:textSize="22sp"
+                    android:background="@drawable/bg_banner_icon"
+                    android:layout_marginEnd="14dp"/>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvBannerTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/white"/>
+
+                    <TextView
+                        android:id="@+id/tvBannerSub"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="12sp"
+                        android:textColor="#80FFFFFF"
+                        android:layout_marginTop="2dp"/>
                 </LinearLayout>
 
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="Propósito (10-500 caracteres)" android:textSize="13sp" android:textStyle="bold"
-                    android:textColor="@color/text_primary" android:layout_marginBottom="6dp"/>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnChange"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="✕ Cambiar"
+                    android:textSize="12sp"
+                    android:backgroundTint="#14FFFFFF"
+                    android:textColor="#99FFFFFF"
+                    style="@style/Widget.MaterialComponents.Button"/>
+            </LinearLayout>
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etPurpose" android:layout_width="match_parent"
-                        android:layout_height="wrap_content" android:hint="Describe el propósito"
-                        android:inputType="textMultiLine" android:minLines="3"/>
-                </com.google.android.material.textfield.TextInputLayout>
+            <!-- Form card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <!-- Fecha inicio -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="📅 Fecha de inicio"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:layout_marginBottom="6dp"/>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="14dp"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etDate"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="YYYY-MM-DD"
+                            android:inputType="date"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Hora inicio / Hora fin -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="14dp">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etStartTime"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="🕐 Hora inicio"
+                                android:inputType="time"/>
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etEndTime"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="🕐 Hora fin"
+                                android:inputType="time"/>
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+
+                    <!-- Motivo -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Motivo de la solicitud"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:layout_marginBottom="6dp"/>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="14dp"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etPurpose"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="Describe el propósito de la reserva..."
+                            android:inputType="textMultiLine"
+                            android:minLines="3"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Warning -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Nota: Las solicitudes se registran como Pendientes y no podrán editarse una vez aprobadas o rechazadas."
+                        android:textSize="12sp"
+                        android:textColor="#92400E"
+                        android:background="@drawable/bg_warning"
+                        android:padding="12dp"
+                        android:lineSpacingExtra="2dp"/>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Footer step 2 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnBack"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="← Atrás"
+                    android:textSize="14sp"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:textColor="@color/gray_text"/>
+
+                <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSubmit"
-                    android:layout_width="match_parent" android:layout_height="56dp"
-                    android:text="Enviar solicitud" android:backgroundTint="@color/green_primary"
-                    android:textSize="16sp" android:textStyle="bold"/>
-
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Confirmar Solicitud ✓"
+                    android:backgroundTint="@color/green_primary"
+                    android:textSize="14sp"
+                    style="@style/Widget.MaterialComponents.Button"/>
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </LinearLayout>
+    </ScrollView>
 
-    </LinearLayout>
-</ScrollView>
+</LinearLayout>
