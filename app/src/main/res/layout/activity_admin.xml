@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- Contenido principal -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -25,12 +26,55 @@
 
     </LinearLayout>
 
-    <com.google.android.material.navigation.NavigationView
-        android:id="@+id/navView"
-        android:layout_width="wrap_content"
+    <!-- Drawer personalizado -->
+    <LinearLayout
+        android:layout_width="280dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        app:headerLayout="@layout/nav_header"
-        app:menu="@menu/admin_menu"/>
+        android:background="@color/green_primary"
+        android:orientation="vertical">
+
+        <!-- NavigationView con header y menú -->
+        <com.google.android.material.navigation.NavigationView
+            android:id="@+id/navView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@color/green_primary"
+            app:headerLayout="@layout/nav_header"
+            app:menu="@menu/admin_menu"
+            app:itemTextColor="@color/white"
+            app:itemIconTint="@color/white"
+            app:itemRippleColor="#33ffffff"
+            app:itemBackground="@android:color/transparent"/>
+
+        <!-- Separador -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#33ffffff"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"/>
+
+        <!-- Botón Cerrar Sesión fijo al fondo -->
+        <TextView
+            android:id="@+id/btnLogout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cerrar Sesión"
+            android:textColor="#dc2626"
+            android:drawableStart="@drawable/ic_menu_logout"
+            android:drawableTint="#dc2626"
+            android:drawablePadding="12dp"
+            android:padding="16dp"
+            android:paddingStart="18dp"
+            android:gravity="center_vertical"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"/>
+
+    </LinearLayout>
 
 </androidx.drawerlayout.widget.DrawerLayout>

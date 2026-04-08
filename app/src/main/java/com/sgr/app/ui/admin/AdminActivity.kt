@@ -29,6 +29,8 @@ class AdminActivity : AppCompatActivity() {
 
         // Set header info
         val header = binding.navView.getHeaderView(0)
+        val initial = session.userName?.firstOrNull()?.uppercaseChar()?.toString() ?: "U"
+        header.findViewById<android.widget.TextView>(R.id.tvNavAvatar).text = initial
         header.findViewById<android.widget.TextView>(R.id.tvNavName).text =
             "${session.userName} ${session.userLastName}"
         header.findViewById<android.widget.TextView>(R.id.tvNavEmail).text = session.userEmail
@@ -42,9 +44,13 @@ class AdminActivity : AppCompatActivity() {
                 R.id.nav_reservations -> showFragment(ReservationsFragment())
                 R.id.nav_audit -> showFragment(AuditFragment())
                 R.id.nav_profile -> showFragment(ProfileFragment())
-                R.id.nav_logout -> logout()
             }
             true
+        }
+
+        binding.btnLogout.setOnClickListener {
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+            logout()
         }
 
         if (savedInstanceState == null) {

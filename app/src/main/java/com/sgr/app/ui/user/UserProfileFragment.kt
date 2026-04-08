@@ -27,10 +27,33 @@ class UserProfileFragment : Fragment() {
         requireActivity().title = ""
         val session = SessionManager(requireContext())
 
-        binding.tvName.text = "Nombre: ${session.userName} ${session.userLastName}"
-        binding.tvEmail.text = "Correo: ${session.userEmail}"
-        binding.tvRole.text = "Rol: ${session.userRole}"
+        val fullName = "${session.userName} ${session.userLastName}"
+        val initial = session.userName?.firstOrNull()?.uppercaseChar()?.toString() ?: "U"
+        val roleLabel = when (session.userRole) {
+            "ADMIN" -> "Administrador"
+            "STAFF" -> "Personal"
+            else -> "Estudiante"
+        }
 
+        binding.tvAvatar.text = initial
+        binding.tvName.text = fullName
+        binding.tvRole.text = roleLabel
+        binding.tvEmail.text = session.userEmail
+
+        binding.tvNameValue.text = session.userName ?: "—"
+        binding.tvLastNameValue.text = session.userLastName ?: "—"
+        binding.tvEmailValue.text = session.userEmail ?: "—"
+        binding.tvRoleValue.text = roleLabel
+
+        binding.btnEditPhone.setOnClickListener {
+            binding.layoutEditPhone.visibility = View.VISIBLE
+            binding.btnEditPhone.visibility = View.GONE
+        }
+        binding.btnCancelPhone.setOnClickListener {
+            binding.layoutEditPhone.visibility = View.GONE
+            binding.btnEditPhone.visibility = View.VISIBLE
+            binding.etPhone.text?.clear()
+        }
         binding.btnSaveProfile.setOnClickListener {
             val phone = binding.etPhone.text?.toString()?.trim() ?: ""
             if (phone.isNotEmpty() && phone.length != 10) {
@@ -44,10 +67,13 @@ class UserProfileFragment : Fragment() {
                         UpdateProfileRequest(session.userName ?: "", session.userLastName ?: "", phone.ifBlank { null })
                     )
                     if (response.isSuccessful) {
-                        Toast.makeText(requireContext(), "Perfil actualizado", Toast.LENGTH_SHORT).show()
+                        binding.tvPhoneValue.text = phone.ifBlank { "Sin teléfono registrado" }
+                        binding.layoutEditPhone.visibility = View.GONE
+                        binding.btnEditPhone.visibility = View.VISIBLE
+                        binding.etPhone.text?.clear()
+                        Toast.makeText(requireContext(), "Teléfono actualizado", Toast.LENGTH_SHORT).show()
                     } else {
-                        val error = response.errorBody()?.string() ?: "Error desconocido"
-                        Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show()
+                        Toast.makeText(requireContext(), "Error al actualizar", Toast.LENGTH_LONG).show()
                     }
                 } catch (e: Exception) {
                     Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
@@ -55,6 +81,17 @@ class UserProfileFragment : Fragment() {
             }
         }
 
+        binding.btnEditPass.setOnClickListener {
+            binding.layoutEditPass.visibility = View.VISIBLE
+            binding.btnEditPass.visibility = View.GONE
+        }
+        binding.btnCancelPass.setOnClickListener {
+            binding.layoutEditPass.visibility = View.GONE
+            binding.btnEditPass.visibility = View.VISIBLE
+            binding.etCurrentPass.text?.clear()
+            binding.etNewPass.text?.clear()
+            binding.etConfirmPass.text?.clear()
+        }
         binding.btnChangePass.setOnClickListener {
             val current = binding.etCurrentPass.text?.toString()?.trim() ?: ""
             val new = binding.etNewPass.text?.toString()?.trim() ?: ""
@@ -65,27 +102,27 @@ class UserProfileFragment : Fragment() {
                 return@setOnClickListener
             }
             if (new.length < 8) {
-                Toast.makeText(requireContext(), "La nueva contraseña debe tener al menos 8 caracteres", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Mínimo 8 caracteres", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             if (new != confirm) {
                 Toast.makeText(requireContext(), "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-
             lifecycleScope.launch {
                 try {
                     val response = RetrofitClient.create(requireContext()).changePassword(
                         session.userId, ChangePasswordRequest(current, new, confirm)
                     )
                     if (response.isSuccessful) {
-                        Toast.makeText(requireContext(), "Contraseña actualizada", Toast.LENGTH_SHORT).show()
+                        binding.layoutEditPass.visibility = View.GONE
+                        binding.btnEditPass.visibility = View.VISIBLE
                         binding.etCurrentPass.text?.clear()
                         binding.etNewPass.text?.clear()
                         binding.etConfirmPass.text?.clear()
+                        Toast.makeText(requireContext(), "Contraseña actualizada", Toast.LENGTH_SHORT).show()
                     } else {
-                        val error = response.errorBody()?.string() ?: "Error desconocido"
-                        Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show()
+                        Toast.makeText(requireContext(), "Error al cambiar contraseña", Toast.LENGTH_LONG).show()
                     }
                 } catch (e: Exception) {
                     Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()

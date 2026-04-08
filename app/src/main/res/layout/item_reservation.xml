@@ -98,5 +98,37 @@
             android:visibility="gone"
             android:backgroundTint="@color/blue_dark"/>
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnViewDetail"
+            android:layout_width="match_parent"
+            android:layout_height="32dp"
+            android:layout_marginTop="6dp"
+            android:text="Ver detalle"
+            android:textSize="11sp"
+            android:backgroundTint="#1D4ED8"
+            style="@style/Widget.MaterialComponents.Button"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEditReservation"
+            android:layout_width="match_parent"
+            android:layout_height="32dp"
+            android:layout_marginTop="4dp"
+            android:text="Editar solicitud"
+            android:textSize="11sp"
+            android:backgroundTint="#D97706"
+            android:visibility="gone"
+            style="@style/Widget.MaterialComponents.Button"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnViewRejection"
+            android:layout_width="match_parent"
+            android:layout_height="32dp"
+            android:layout_marginTop="4dp"
+            android:text="Ver motivo de rechazo"
+            android:textSize="11sp"
+            android:backgroundTint="#DC2626"
+            android:visibility="gone"
+            style="@style/Widget.MaterialComponents.Button"/>
+
     </LinearLayout>
 </androidx.cardview.widget.CardView>

@@ -9,27 +9,44 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:paddingHorizontal="16dp"
         android:paddingTop="16dp"
         android:paddingBottom="8dp"
         android:background="@color/white">
 
-        <TextView
-            android:layout_width="match_parent"
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Gestión de Espacios"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:textColor="@color/text_primary"/>
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Control de aulas, laboratorios y áreas comunes institucionales."
-            android:textSize="13sp"
-            android:textColor="@color/gray_text"
-            android:layout_marginTop="2dp"/>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Gestión de Espacios"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Control de aulas, laboratorios y áreas comunes institucionales."
+                android:textSize="13sp"
+                android:textColor="@color/gray_text"
+                android:layout_marginTop="2dp"/>
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAddSpace"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="+ Nuevo"
+            android:textSize="12sp"
+            android:backgroundTint="@color/green_primary"
+            style="@style/Widget.MaterialComponents.Button"/>
 
     </LinearLayout>
 

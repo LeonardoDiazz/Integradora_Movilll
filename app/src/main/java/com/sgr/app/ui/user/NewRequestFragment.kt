@@ -5,6 +5,9 @@ import android.view.*
 import android.widget.*
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.sgr.app.R
 import com.sgr.app.databinding.FragmentNewRequestBinding
 import com.sgr.app.model.CreateReservationRequest
 import com.sgr.app.model.Equipment
@@ -13,14 +16,26 @@ import com.sgr.app.network.RetrofitClient
 import com.sgr.app.utils.SessionManager
 import kotlinx.coroutines.launch
 
+data class ResourceItem(
+    val id: Long,
+    val name: String,
+    val resourceType: String,
+    val meta: String,
+    val icon: String
+)
+
 class NewRequestFragment : Fragment() {
 
     private var _binding: FragmentNewRequestBinding? = null
     private val binding get() = _binding!!
 
+    private var currentTab = "SPACE"
+    private var currentPage = 0
+    private var totalPages = 1
+    private var selectedResource: ResourceItem? = null
+
     private var spaces = listOf<Space>()
     private var equipments = listOf<Equipment>()
-    private var selectedType = "SPACE"
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentNewRequestBinding.inflate(inflater, container, false)
@@ -31,43 +46,137 @@ class NewRequestFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         requireActivity().title = ""
 
-        val types = arrayOf("Espacio", "Equipo")
-        binding.spinnerResourceType.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, types).also {
-            it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        }
-        binding.spinnerResourceType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
-                selectedType = if (pos == 0) "SPACE" else "EQUIPMENT"
-                updateResourceSpinner()
-            }
-            override fun onNothingSelected(p: AdapterView<*>?) {}
+        val session = SessionManager(requireContext())
+        val isStudent = session.userRole == "STUDENT" || session.userRole == "STUDENTS"
+
+        if (isStudent) binding.tvStudentNotice.visibility = View.VISIBLE
+
+        binding.recyclerResources.layoutManager = LinearLayoutManager(requireContext())
+
+        // Tabs
+        binding.btnTabSpace.setOnClickListener { if (currentTab != "SPACE") switchTab("SPACE") }
+        binding.btnTabEquipment.setOnClickListener { if (currentTab != "EQUIPMENT") switchTab("EQUIPMENT") }
+
+        // Search
+        binding.etSearch.addTextChangedListener(object : android.text.TextWatcher {
+            override fun afterTextChanged(s: android.text.Editable?) { currentPage = 0; loadResources() }
+            override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) {}
+            override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {}
+        })
+
+        // Pagination
+        binding.btnPrev.setOnClickListener { if (currentPage > 0) { currentPage--; loadResources() } }
+        binding.btnNext.setOnClickListener { if (currentPage < totalPages - 1) { currentPage++; loadResources() } }
+
+        // Continue
+        binding.btnContinue.setOnClickListener { goToStep2() }
+
+        // Back
+        binding.btnBack.setOnClickListener { goToStep1() }
+
+        // Change resource
+        binding.btnChange.setOnClickListener { goToStep1() }
+
+        // Submit
+        binding.btnSubmit.setOnClickListener { submit() }
+
+        loadResources()
+    }
+
+    private fun switchTab(tab: String) {
+        currentTab = tab
+        currentPage = 0
+        selectedResource = null
+        binding.btnContinue.isEnabled = false
+
+        val green = android.content.res.ColorStateList.valueOf(0xFF00843D.toInt())
+        val inactive = android.content.res.ColorStateList.valueOf(0xFFF1F5F9.toInt())
+        if (tab == "SPACE") {
+            binding.btnTabSpace.backgroundTintList = green
+            binding.btnTabSpace.setTextColor(0xFFFFFFFF.toInt())
+            binding.btnTabEquipment.backgroundTintList = inactive
+            binding.btnTabEquipment.setTextColor(0xFF6B7280.toInt())
+            binding.etSearch.setText("")
+            binding.etSearch.hint = "Buscar espacio..."
+        } else {
+            binding.btnTabEquipment.backgroundTintList = green
+            binding.btnTabEquipment.setTextColor(0xFFFFFFFF.toInt())
+            binding.btnTabSpace.backgroundTintList = inactive
+            binding.btnTabSpace.setTextColor(0xFF6B7280.toInt())
+            binding.etSearch.setText("")
+            binding.etSearch.hint = "Buscar equipo..."
         }
 
         loadResources()
-
-        binding.btnSubmit.setOnClickListener { submit() }
     }
 
     private fun loadResources() {
+        val search = binding.etSearch.text?.toString()?.trim() ?: ""
+        val session = SessionManager(requireContext())
+        val isStudent = session.userRole == "STUDENT" || session.userRole == "STUDENTS"
+
         lifecycleScope.launch {
             try {
                 val api = RetrofitClient.create(requireContext())
-                spaces = api.getSpaces(0, 100).body()?.content ?: emptyList()
-                equipments = api.getEquipments(0, 100).body()?.content ?: emptyList()
-                updateResourceSpinner()
+                val items: List<ResourceItem>
+
+                if (currentTab == "SPACE") {
+                    val resp = api.getSpaces(currentPage, 10, "", search)
+                    if (resp.isSuccessful) {
+                        val page = resp.body() ?: return@launch
+                        totalPages = page.totalPages.coerceAtLeast(1)
+                        spaces = page.content
+                        val filtered = page.content
+                            .filter { it.active && it.availability == "DISPONIBLE" }
+                            .filter { !isStudent || it.allowStudents }
+                        items = filtered.map { ResourceItem(it.id, it.name, "SPACE", "📍 ${it.location} • 👥 ${it.capacity}", "🏢") }
+                    } else return@launch
+                } else {
+                    val resp = api.getEquipments(currentPage, 10, "", search)
+                    if (resp.isSuccessful) {
+                        val page = resp.body() ?: return@launch
+                        totalPages = page.totalPages.coerceAtLeast(1)
+                        equipments = page.content
+                        val filtered = page.content
+                            .filter { it.active && it.equipmentCondition == "DISPONIBLE" }
+                            .filter { !isStudent || it.allowStudents }
+                        items = filtered.map { ResourceItem(it.id, it.name, "EQUIPMENT", "${it.category} • ${it.inventoryNumber}", "📦") }
+                    } else return@launch
+                }
+
+                binding.tvPage.text = "Pág ${currentPage + 1} / $totalPages"
+
+                if (items.isEmpty()) {
+                    binding.recyclerResources.visibility = View.GONE
+                    binding.tvEmpty.visibility = View.VISIBLE
+                } else {
+                    binding.tvEmpty.visibility = View.GONE
+                    binding.recyclerResources.visibility = View.VISIBLE
+                    binding.recyclerResources.adapter = ResourceAdapter(items, selectedResource?.id) { res ->
+                        selectedResource = res
+                        binding.btnContinue.isEnabled = true
+                        (binding.recyclerResources.adapter as ResourceAdapter).setSelected(res.id)
+                    }
+                }
             } catch (_: Exception) {}
         }
     }
 
-    private fun updateResourceSpinner() {
-        val items = if (selectedType == "SPACE") {
-            spaces.filter { it.active && it.availability == "DISPONIBLE" }.map { it.name }
-        } else {
-            equipments.filter { it.active && it.equipmentCondition == "DISPONIBLE" }.map { it.name }
-        }
-        binding.spinnerResource.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, items).also {
-            it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        }
+    private fun goToStep2() {
+        val res = selectedResource ?: return
+        binding.layoutStep1.visibility = View.GONE
+        binding.layoutStep2.visibility = View.VISIBLE
+        binding.step2Indicator.setBackgroundResource(R.drawable.bg_step_active)
+
+        binding.tvBannerIcon.text = res.icon
+        binding.tvBannerTitle.text = res.name
+        binding.tvBannerSub.text = "${res.meta} • ${if (res.resourceType == "SPACE") "Espacio" else "Equipo"}"
+    }
+
+    private fun goToStep1() {
+        binding.layoutStep2.visibility = View.GONE
+        binding.layoutStep1.visibility = View.VISIBLE
+        binding.step2Indicator.setBackgroundResource(R.drawable.bg_step_inactive)
     }
 
     private fun submit() {
@@ -75,7 +184,7 @@ class NewRequestFragment : Fragment() {
         val startTime = binding.etStartTime.text?.toString()?.trim() ?: ""
         val endTime = binding.etEndTime.text?.toString()?.trim() ?: ""
         val purpose = binding.etPurpose.text?.toString()?.trim() ?: ""
-        val selectedPos = binding.spinnerResource.selectedItemPosition
+        val res = selectedResource ?: return
 
         if (date.isEmpty() || startTime.isEmpty() || endTime.isEmpty() || purpose.isEmpty()) {
             Toast.makeText(requireContext(), "Completa todos los campos", Toast.LENGTH_SHORT).show()
@@ -87,37 +196,17 @@ class NewRequestFragment : Fragment() {
         }
 
         val session = SessionManager(requireContext())
-        val spaceId: Long?
-        val equipmentId: Long?
-
-        if (selectedType == "SPACE") {
-            val availableSpaces = spaces.filter { it.active && it.availability == "DISPONIBLE" }
-            if (availableSpaces.isEmpty() || selectedPos >= availableSpaces.size) {
-                Toast.makeText(requireContext(), "Selecciona un espacio", Toast.LENGTH_SHORT).show()
-                return
-            }
-            spaceId = availableSpaces[selectedPos].id
-            equipmentId = null
-        } else {
-            val availableEq = equipments.filter { it.active && it.equipmentCondition == "DISPONIBLE" }
-            if (availableEq.isEmpty() || selectedPos >= availableEq.size) {
-                Toast.makeText(requireContext(), "Selecciona un equipo", Toast.LENGTH_SHORT).show()
-                return
-            }
-            spaceId = null
-            equipmentId = availableEq[selectedPos].id
-        }
-
         binding.btnSubmit.isEnabled = false
+
         lifecycleScope.launch {
             try {
                 val api = RetrofitClient.create(requireContext())
                 val response = api.createReservation(
                     CreateReservationRequest(
                         requesterId = session.userId,
-                        resourceType = selectedType,
-                        spaceId = spaceId,
-                        equipmentId = equipmentId,
+                        resourceType = res.resourceType,
+                        spaceId = if (res.resourceType == "SPACE") res.id else null,
+                        equipmentId = if (res.resourceType == "EQUIPMENT") res.id else null,
                         reservationDate = date,
                         startTime = startTime,
                         endTime = endTime,
@@ -127,10 +216,15 @@ class NewRequestFragment : Fragment() {
                 )
                 if (response.isSuccessful) {
                     Toast.makeText(requireContext(), "¡Solicitud enviada exitosamente!", Toast.LENGTH_LONG).show()
+                    // Reset form
+                    selectedResource = null
+                    binding.btnContinue.isEnabled = false
                     binding.etDate.text?.clear()
                     binding.etStartTime.text?.clear()
                     binding.etEndTime.text?.clear()
                     binding.etPurpose.text?.clear()
+                    goToStep1()
+                    loadResources()
                 } else {
                     Toast.makeText(requireContext(), "Error al enviar solicitud", Toast.LENGTH_SHORT).show()
                 }
@@ -143,4 +237,35 @@ class NewRequestFragment : Fragment() {
     }
 
     override fun onDestroyView() { super.onDestroyView(); _binding = null }
+}
+
+class ResourceAdapter(
+    private val items: List<ResourceItem>,
+    private var selectedId: Long?,
+    private val onSelect: (ResourceItem) -> Unit
+) : RecyclerView.Adapter<ResourceAdapter.VH>() {
+
+    inner class VH(val view: View) : RecyclerView.ViewHolder(view)
+
+    fun setSelected(id: Long) { selectedId = id; notifyDataSetChanged() }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
+        VH(LayoutInflater.from(parent.context).inflate(R.layout.item_resource_card, parent, false))
+
+    override fun getItemCount() = items.size
+
+    override fun onBindViewHolder(holder: VH, position: Int) {
+        val item = items[position]
+        val isSelected = item.id == selectedId
+        holder.view.apply {
+            setBackgroundResource(if (isSelected) R.drawable.bg_card_selected else R.drawable.bg_card_selectable)
+            findViewById<TextView>(R.id.tvResourceIcon).text = item.icon
+            findViewById<TextView>(R.id.tvResourceName).text = item.name
+            findViewById<TextView>(R.id.tvResourceLocation).text = item.meta
+            findViewById<TextView>(R.id.tvResourceMeta).text = item.meta
+            val check = findViewById<TextView>(R.id.tvCheckMark)
+            check.visibility = if (isSelected) View.VISIBLE else View.GONE
+            setOnClickListener { onSelect(item) }
+        }
+    }
 }

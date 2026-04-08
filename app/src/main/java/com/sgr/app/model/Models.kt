@@ -123,3 +123,44 @@ data class MessageResponse(val message: String)
 
 data class UpdateProfileRequest(val name: String, val lastName: String, val phone: String?)
 data class ChangePasswordRequest(val currentPassword: String, val newPassword: String, val confirmPassword: String)
+
+data class CreateSpaceRequest(
+    val name: String,
+    val category: String,
+    val location: String,
+    val capacity: Int,
+    val description: String,
+    val allowStudents: Boolean,
+    val availability: String,
+    val active: Boolean
+)
+
+data class CreateEquipmentRequest(
+    val inventoryNumber: String,
+    val name: String,
+    val category: String,
+    val description: String,
+    val allowStudents: Boolean,
+    val equipmentCondition: String,
+    val active: Boolean
+)
+
+data class UpdateReservationRequest(
+    val requesterId: Long,
+    val resourceType: String,
+    val spaceId: Long?,
+    val equipmentId: Long?,
+    val reservationDate: String,
+    val startTime: String,
+    val endTime: String,
+    val purpose: String,
+    val observations: String?
+)
+
+data class HistoryItem(
+    val id: Long?,
+    val action: String?,
+    val changedBy: String?,
+    val changedAt: String?,
+    val details: String?
+)
