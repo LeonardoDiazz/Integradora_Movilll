@@ -85,12 +85,12 @@ data class Reservation(
     val spaceName: String?,
     val equipmentId: Long?,
     val equipmentName: String?,
-    val reservationDate: String,
-    val startTime: String,
-    val endTime: String,
-    val purpose: String,
+    val reservationDate: String?,
+    val startTime: String?,
+    val endTime: String?,
+    val purpose: String?,
     val observations: String?,
-    val status: String,
+    val status: String?,
     val adminComment: String?,
     val createdAt: String?
 )

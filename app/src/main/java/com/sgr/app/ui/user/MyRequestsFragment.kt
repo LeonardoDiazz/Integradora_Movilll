@@ -133,6 +133,7 @@ class MyRequestsFragment : Fragment() {
             view.findViewById<TextView>(R.id.tvDEndTime).text = r.endTime ?: "—"
             view.findViewById<TextView>(R.id.tvDStatus).text = statusLabel(r.status ?: "")
             view.findViewById<TextView>(R.id.tvDPurpose).text = r.purpose?.ifBlank { "—" } ?: "—"
+
             view.findViewById<TextView>(R.id.tvDObservations).text = r.observations?.ifBlank { "—" } ?: "—"
             view.findViewById<TextView>(R.id.tvDAdminComment).text = r.adminComment?.ifBlank { "—" } ?: "—"
 
@@ -269,7 +270,7 @@ class MyReservationAdapter(
 
             // Badge estado
             val tvStatus = findViewById<TextView>(R.id.tvStatus)
-            tvStatus.text = when (r.status) {
+            tvStatus.text = when (r.status ?: "") {
                 "PENDIENTE" -> "Pendiente"
                 "APROBADA" -> "En préstamo"
                 "RECHAZADA" -> "Rechazada"
@@ -277,12 +278,12 @@ class MyReservationAdapter(
                 "DEVUELTA" -> "Devuelta"
                 else -> r.status
             }
-            when (r.status) {
+            when (r.status ?: "") {
                 "PENDIENTE" -> { tvStatus.setBackgroundResource(R.drawable.bg_badge_yellow); tvStatus.setTextColor(0xFF92400E.toInt()) }
                 "APROBADA" -> { tvStatus.setBackgroundResource(R.drawable.bg_badge_green); tvStatus.setTextColor(0xFF065F46.toInt()) }
                 "RECHAZADA" -> { tvStatus.setBackgroundResource(R.drawable.bg_badge_red); tvStatus.setTextColor(0xFF991B1B.toInt()) }
-                "DEVUELTA" -> { tvStatus.setBackgroundResource(R.drawable.bg_icon_btn); tvStatus.setTextColor(0xFF1D4ED8.toInt()) }
-                else -> { tvStatus.setBackgroundResource(R.drawable.bg_detail_card); tvStatus.setTextColor(0xFF6B7280.toInt()) }
+                "DEVUELTA" -> { tvStatus.setBackgroundResource(R.drawable.bg_badge_blue); tvStatus.setTextColor(0xFF1D4ED8.toInt()) }
+                else -> { tvStatus.setBackgroundResource(R.drawable.bg_badge_gray); tvStatus.setTextColor(0xFF6B7280.toInt()) }
             }
 
             // Botones

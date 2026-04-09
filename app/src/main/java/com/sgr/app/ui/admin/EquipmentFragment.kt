@@ -139,24 +139,39 @@ class EquipmentFragment : Fragment() {
 
         val etInvNumber = EditText(ctx).apply { hint = "Número de inventario"; setText(eq?.inventoryNumber ?: "") }
         val etName = EditText(ctx).apply { hint = "Nombre del equipo"; setText(eq?.name ?: "") }
-        val etCategory = EditText(ctx).apply { hint = "Categoría (Audiovisual, Cómputo, etc.)"; setText(eq?.category ?: "") }
         val etDescription = EditText(ctx).apply { hint = "Descripción"; minLines = 2; setText(eq?.description ?: "") }
 
+        val catLabels = arrayOf("Audiovisual", "Cómputo", "Laboratorio")
+        val catValues = arrayOf("AUDIOVISUAL", "COMPUTO", "LABORATORIO")
+        val spinnerCat = Spinner(ctx).apply {
+            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, catLabels)
+            val idx = catValues.indexOf(eq?.category ?: "COMPUTO").coerceAtLeast(0)
+            setSelection(idx)
+        }
+
+        val condLabels = arrayOf("Disponible", "En uso", "Mantenimiento")
         val condValues = arrayOf("DISPONIBLE", "EN_USO", "MANTENIMIENTO")
         val spinnerCond = Spinner(ctx).apply {
-            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, condValues)
+            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, condLabels)
             val idx = condValues.indexOf(eq?.equipmentCondition ?: "DISPONIBLE").coerceAtLeast(0)
             setSelection(idx)
         }
-        val cbStudents = CheckBox(ctx).apply { text = "Permite estudiantes"; isChecked = eq?.allowStudents ?: true }
-        val cbActive = CheckBox(ctx).apply { text = "Activo"; isChecked = eq?.active ?: true }
+
+        val estadoLabels = arrayOf("Activo", "Inactivo")
+        val spinnerEstado = Spinner(ctx).apply {
+            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, estadoLabels)
+            setSelection(if (eq?.active != false) 0 else 1)
+        }
+
+        val cbStudents = CheckBox(ctx).apply { text = "Permitir acceso a estudiantes"; isChecked = eq?.allowStudents ?: true }
 
         layout.addView(label("Número de inventario *")); layout.addView(etInvNumber)
-        layout.addView(label("Nombre *")); layout.addView(etName)
-        layout.addView(label("Categoría")); layout.addView(etCategory)
+        layout.addView(label("Nombre del Equipo *")); layout.addView(etName)
+        layout.addView(label("Tipo")); layout.addView(spinnerCat)
         layout.addView(label("Descripción")); layout.addView(etDescription)
         layout.addView(label("Condición")); layout.addView(spinnerCond)
-        layout.addView(cbStudents); layout.addView(cbActive)
+        layout.addView(label("Estado")); layout.addView(spinnerEstado)
+        layout.addView(cbStudents)
 
         val sv = ScrollView(ctx).apply { addView(layout) }
 
@@ -168,11 +183,11 @@ class EquipmentFragment : Fragment() {
             } else CreateEquipmentRequest(
                 inventoryNumber = inv,
                 name = name,
-                category = etCategory.text.toString().trim(),
+                category = catValues[spinnerCat.selectedItemPosition],
                 description = etDescription.text.toString().trim(),
                 allowStudents = cbStudents.isChecked,
                 equipmentCondition = condValues[spinnerCond.selectedItemPosition],
-                active = cbActive.isChecked
+                active = spinnerEstado.selectedItemPosition == 0
             )
         }
         return Pair(sv, builder)

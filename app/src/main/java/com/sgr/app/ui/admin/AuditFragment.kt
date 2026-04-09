@@ -111,26 +111,39 @@ class AuditFragment : Fragment() {
     }
 
     private fun showAuditDetailDialog(r: Reservation) {
+        val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_reservation_detail, null)
         val resourceName = if (r.resourceType == "SPACE") r.spaceName ?: "—" else r.equipmentName ?: "—"
-        val resourceType = if (r.resourceType == "SPACE") "Espacio" else "Equipo"
-        val schedule = if (r.startTime.isNotBlank() && r.startTime != "null" &&
-            r.endTime.isNotBlank() && r.endTime != "null")
-            "${r.startTime} - ${r.endTime}" else "—"
-        val msg = """
-            Solicitante: ${r.requesterName ?: "—"} (${r.requesterEmail ?: "—"})
-            Tipo: $resourceType
-            Recurso: $resourceName
-            Fecha: ${r.reservationDate}
-            Horario: $schedule
-            Estado: ${r.status}
-            Motivo: ${r.purpose}
-            Observaciones: ${r.observations ?: "—"}
-            Comentario admin: ${r.adminComment ?: "—"}
-        """.trimIndent()
-        AlertDialog.Builder(requireContext())
-            .setTitle("Detalle de reservación #${r.id}")
-            .setMessage(msg)
-            .setPositiveButton("Cerrar", null).show()
+        val resourceTypeLabel = if (r.resourceType == "SPACE") "Espacio" else "Equipo"
+        val statusLabel = when (r.status) {
+            "PENDIENTE" -> "Pendiente"
+            "APROBADA" -> "Aprobada"
+            "RECHAZADA" -> "Rechazada"
+            "DEVUELTA" -> "Devuelta"
+            "CANCELADA" -> "Cancelada"
+            else -> r.status ?: "—"
+        }
+
+        view.findViewById<TextView>(R.id.tvDRequester).text = r.requesterName ?: "—"
+        view.findViewById<TextView>(R.id.tvDEmail).text = r.requesterEmail ?: "—"
+        view.findViewById<TextView>(R.id.tvDRequesterType).text = "—"
+        view.findViewById<TextView>(R.id.tvDResourceType).text = resourceTypeLabel
+        view.findViewById<TextView>(R.id.tvDResource).text = resourceName
+        view.findViewById<TextView>(R.id.tvDDate).text = r.reservationDate ?: "—"
+        view.findViewById<TextView>(R.id.tvDStartTime).text = r.startTime ?: "—"
+        view.findViewById<TextView>(R.id.tvDReturnDate).text = r.createdAt?.take(10) ?: "—"
+        view.findViewById<TextView>(R.id.tvDEndTime).text = r.endTime ?: "—"
+        view.findViewById<TextView>(R.id.tvDStatus).text = statusLabel
+        view.findViewById<TextView>(R.id.tvDPurpose).text = r.purpose ?: "—"
+        view.findViewById<TextView>(R.id.tvDObservations).text = r.observations ?: "—"
+        view.findViewById<TextView>(R.id.tvDAdminComment).text = r.adminComment ?: "—"
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(view)
+            .create()
+        view.findViewById<TextView>(R.id.btnDetailClose).setOnClickListener { dialog.dismiss() }
+        view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDetailDismiss)
+            .setOnClickListener { dialog.dismiss() }
+        dialog.show()
     }
 
     override fun onDestroyView() { super.onDestroyView(); _binding = null }
@@ -161,8 +174,7 @@ class AuditAdapter(
 
             findViewById<TextView>(R.id.tvAuditDate).text = r.reservationDate
 
-            val schedule = if (r.startTime.isNotBlank() && r.startTime != "null" &&
-                r.endTime.isNotBlank() && r.endTime != "null")
+            val schedule = if (!r.startTime.isNullOrBlank() && !r.endTime.isNullOrBlank())
                 "${r.startTime} - ${r.endTime}" else "—"
             findViewById<TextView>(R.id.tvAuditSchedule).text = schedule
 
@@ -176,7 +188,7 @@ class AuditAdapter(
                 else -> r.status
             }
             tvStatus.text = statusLabel
-            val statusColor = when (r.status) {
+            val statusColor = when (r.status ?: "") {
                 "PENDIENTE" -> 0xFFF59E0B.toInt()
                 "APROBADA" -> 0xFF10B981.toInt()
                 "RECHAZADA" -> 0xFFEF4444.toInt()

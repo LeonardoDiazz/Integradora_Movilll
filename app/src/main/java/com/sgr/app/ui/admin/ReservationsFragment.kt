@@ -162,7 +162,7 @@ class ReservationsFragment : Fragment() {
             "RECHAZADA" -> "Rechazada"
             "DEVUELTA" -> "Devuelta"
             "CANCELADA" -> "Cancelada"
-            else -> r.status
+            else -> r.status ?: "—"
         }
 
         view.findViewById<TextView>(R.id.tvDRequester).text = r.requesterName ?: "—"
@@ -170,12 +170,12 @@ class ReservationsFragment : Fragment() {
         view.findViewById<TextView>(R.id.tvDRequesterType).text = "—"
         view.findViewById<TextView>(R.id.tvDResourceType).text = resourceTypeLabel
         view.findViewById<TextView>(R.id.tvDResource).text = resourceName
-        view.findViewById<TextView>(R.id.tvDDate).text = r.reservationDate
-        view.findViewById<TextView>(R.id.tvDStartTime).text = r.startTime
+        view.findViewById<TextView>(R.id.tvDDate).text = r.reservationDate ?: "—"
+        view.findViewById<TextView>(R.id.tvDStartTime).text = r.startTime ?: "—"
         view.findViewById<TextView>(R.id.tvDReturnDate).text = r.createdAt?.take(10) ?: "—"
-        view.findViewById<TextView>(R.id.tvDEndTime).text = r.endTime
+        view.findViewById<TextView>(R.id.tvDEndTime).text = r.endTime ?: "—"
         view.findViewById<TextView>(R.id.tvDStatus).text = statusLabel
-        view.findViewById<TextView>(R.id.tvDPurpose).text = r.purpose
+        view.findViewById<TextView>(R.id.tvDPurpose).text = r.purpose ?: "—"
         view.findViewById<TextView>(R.id.tvDObservations).text = r.observations ?: "—"
         view.findViewById<TextView>(R.id.tvDAdminComment).text = r.adminComment ?: "—"
 
@@ -336,7 +336,7 @@ class ReservationAdapter(
             findViewById<TextView>(R.id.tvRequester).text = r.requesterName ?: r.requesterEmail ?: "—"
             val resourceName = if (r.resourceType == "SPACE") r.spaceName ?: "—" else r.equipmentName ?: "—"
             findViewById<TextView>(R.id.tvResourceName).text = resourceName
-            findViewById<TextView>(R.id.tvDate).text = "${r.reservationDate}  ${r.startTime} – ${r.endTime}"
+            findViewById<TextView>(R.id.tvDate).text = "${r.reservationDate ?: "—"}  ${r.startTime ?: ""} – ${r.endTime ?: ""}"
 
             // Badge categoría
             val tvCategory = findViewById<TextView>(R.id.tvCategory)
@@ -389,7 +389,7 @@ class ReservationAdapter(
             btnReject.visibility = View.GONE
             btnReturn.visibility = View.GONE
 
-            when (r.status) {
+            when (r.status ?: "") {
                 "PENDIENTE" -> {
                     btnApprove.visibility = View.VISIBLE
                     btnReject.visibility = View.VISIBLE

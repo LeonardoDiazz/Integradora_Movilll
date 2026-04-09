@@ -149,27 +149,42 @@ class SpacesFragment : Fragment() {
         fun label(text: String) = TextView(ctx).apply { this.text = text; textSize = 12f; setPadding(0, 12, 0, 2) }
 
         val etName = EditText(ctx).apply { hint = "Nombre del espacio"; setText(space?.name ?: "") }
-        val etCategory = EditText(ctx).apply { hint = "Categoría (Aula, Laboratorio, etc.)"; setText(space?.category ?: "") }
         val etLocation = EditText(ctx).apply { hint = "Ubicación"; setText(space?.location ?: "") }
         val etCapacity = EditText(ctx).apply { hint = "Capacidad"; inputType = android.text.InputType.TYPE_CLASS_NUMBER; setText(space?.capacity?.toString() ?: "") }
         val etDescription = EditText(ctx).apply { hint = "Descripción"; minLines = 2; setText(space?.description ?: "") }
 
+        val catLabels = arrayOf("Sala", "Laboratorio", "Auditorio", "Oficina")
+        val catValues = arrayOf("SALA", "LABORATORIO", "AUDITORIO", "OFICINA")
+        val spinnerCat = Spinner(ctx).apply {
+            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, catLabels)
+            val idx = catValues.indexOf(space?.category?.uppercase() ?: "SALA").coerceAtLeast(0)
+            setSelection(idx)
+        }
+
+        val availLabels = arrayOf("Disponible", "Ocupado", "Mantenimiento")
         val availValues = arrayOf("DISPONIBLE", "OCUPADO", "MANTENIMIENTO")
         val spinnerAvail = Spinner(ctx).apply {
-            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, availValues)
+            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, availLabels)
             val idx = availValues.indexOf(space?.availability ?: "DISPONIBLE").coerceAtLeast(0)
             setSelection(idx)
         }
-        val cbStudents = CheckBox(ctx).apply { text = "Permite estudiantes"; isChecked = space?.allowStudents ?: true }
-        val cbActive = CheckBox(ctx).apply { text = "Activo"; isChecked = space?.active ?: true }
+
+        val estadoLabels = arrayOf("Activo", "Inactivo")
+        val spinnerEstado = Spinner(ctx).apply {
+            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, estadoLabels)
+            setSelection(if (space?.active != false) 0 else 1)
+        }
+
+        val cbStudents = CheckBox(ctx).apply { text = "Permitir para alumnos"; isChecked = space?.allowStudents ?: true }
 
         layout.addView(label("Nombre *")); layout.addView(etName)
-        layout.addView(label("Categoría")); layout.addView(etCategory)
+        layout.addView(label("Categoría")); layout.addView(spinnerCat)
         layout.addView(label("Ubicación")); layout.addView(etLocation)
         layout.addView(label("Capacidad")); layout.addView(etCapacity)
         layout.addView(label("Descripción")); layout.addView(etDescription)
+        layout.addView(cbStudents)
         layout.addView(label("Disponibilidad")); layout.addView(spinnerAvail)
-        layout.addView(cbStudents); layout.addView(cbActive)
+        layout.addView(label("Estado")); layout.addView(spinnerEstado)
 
         val sv = ScrollView(ctx).apply { addView(layout) }
 
@@ -178,13 +193,13 @@ class SpacesFragment : Fragment() {
             if (name.isEmpty()) { Toast.makeText(ctx, "El nombre es requerido", Toast.LENGTH_SHORT).show(); null }
             else CreateSpaceRequest(
                 name = name,
-                category = etCategory.text.toString().trim(),
+                category = catValues[spinnerCat.selectedItemPosition],
                 location = etLocation.text.toString().trim(),
                 capacity = etCapacity.text.toString().toIntOrNull() ?: 0,
                 description = etDescription.text.toString().trim(),
                 allowStudents = cbStudents.isChecked,
                 availability = availValues[spinnerAvail.selectedItemPosition],
-                active = cbActive.isChecked
+                active = spinnerEstado.selectedItemPosition == 0
             )
         }
         return Pair(sv, builder)
