@@ -126,74 +126,146 @@ class UsersFragment : Fragment() {
 
     private fun buildUserForm(user: User? = null, isCreate: Boolean = true): Pair<ScrollView, () -> CreateUserRequest?> {
         val ctx = requireContext()
-        val layout = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(48, 16, 48, 0) }
+        val dm = ctx.resources.displayMetrics
+        val dp8 = (8 * dm.density).toInt()
+        val dp16 = (16 * dm.density).toInt()
+        val dp4 = (4 * dm.density).toInt()
 
-        fun label(text: String) = TextView(ctx).apply { this.text = text; textSize = 12f; setPadding(0, 12, 0, 2) }
+        val root = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(dp16, dp8, dp16, dp8) }
 
-        val etName = EditText(ctx).apply { hint = "Nombre"; setText(user?.name ?: "") }
-        val etLastName = EditText(ctx).apply { hint = "Apellido"; setText(user?.lastName ?: "") }
-        val etEmail = EditText(ctx).apply { hint = "Correo electrónico"; inputType = android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS; setText(user?.email ?: "") }
-        val etIdentifier = EditText(ctx).apply { hint = "Matrícula / ID"; setText(user?.identifier ?: "") }
-        val etPhone = EditText(ctx).apply { hint = "Teléfono (opcional)"; inputType = android.text.InputType.TYPE_CLASS_PHONE; setText(user?.phone ?: "") }
-        val etBirthDate = EditText(ctx).apply { hint = "Fecha nacimiento (YYYY-MM-DD)"; setText(user?.birthDate ?: "") }
-
-        val roleValues = arrayOf("STUDENTS", "ADMIN")
-        val roleLabels = arrayOf("Usuario solicitante", "Administrador")
-        val spinnerRole = Spinner(ctx).apply {
-            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, roleLabels)
-            val idx = roleValues.indexOf(user?.role ?: "STUDENTS").coerceAtLeast(0)
-            setSelection(idx)
+        fun sectionTitle(text: String) = TextView(ctx).apply {
+            this.text = text; textSize = 12f; typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setTextColor(0xFF374151.toInt())
+            val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            lp.topMargin = dp16; lp.bottomMargin = dp8; layoutParams = lp
         }
+
+        fun fieldLabel(text: String) = TextView(ctx).apply {
+            this.text = text; textSize = 12f; setTextColor(0xFF374151.toInt())
+            val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            lp.bottomMargin = dp4; layoutParams = lp
+        }
+
+        fun outlinedEdit(hint: String, value: String = "", inputType: Int = android.text.InputType.TYPE_CLASS_TEXT): EditText {
+            return EditText(ctx).apply {
+                this.hint = hint; setText(value); this.inputType = inputType
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(0xFFFFFFFF.toInt()); cornerRadius = 10f * dm.density
+                    setStroke((1 * dm.density).toInt(), 0xFFD1D5DB.toInt())
+                }
+                setPadding(dp16, dp8, dp16, dp8)
+                val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                lp.bottomMargin = dp8; layoutParams = lp
+            }
+        }
+
+        fun styledSpinner(labels: Array<String>, selectedIdx: Int = 0): Spinner {
+            return Spinner(ctx).apply {
+                adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, labels)
+                setSelection(selectedIdx)
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(0xFFFFFFFF.toInt()); cornerRadius = 10f * dm.density
+                    setStroke((1 * dm.density).toInt(), 0xFFD1D5DB.toInt())
+                }
+                val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (48 * dm.density).toInt())
+                lp.bottomMargin = dp8; layoutParams = lp
+            }
+        }
+
+        // — INFORMACIÓN PERSONAL —
+        root.addView(sectionTitle("INFORMACIÓN PERSONAL"))
+        val etName = outlinedEdit("Nombre *", user?.name ?: "")
+        val etLastName = outlinedEdit("Apellidos *", user?.lastName ?: "")
+        val etBirthDate = outlinedEdit("Fecha de Nacimiento (YYYY-MM-DD)", user?.birthDate ?: "")
+        root.addView(fieldLabel("Nombre *")); root.addView(etName)
+        root.addView(fieldLabel("Apellidos *")); root.addView(etLastName)
+        root.addView(fieldLabel("Fecha de Nacimiento *")); root.addView(etBirthDate)
+
+        // — DATOS INSTITUCIONALES —
+        root.addView(sectionTitle("DATOS INSTITUCIONALES"))
+        val roleValues = arrayOf("STUDENTS", "ADMIN")
+        val roleLabels = arrayOf("Solicitante", "Administrador")
+        val spinnerRole = styledSpinner(roleLabels, roleValues.indexOf(user?.role ?: "STUDENTS").coerceAtLeast(0))
 
         val userTypeValues = arrayOf("ESTUDIANTE", "STAFF")
-        val spinnerUserType = Spinner(ctx).apply {
-            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, userTypeValues)
-            val idx = userTypeValues.indexOf(user?.userType ?: "ESTUDIANTE").coerceAtLeast(0)
-            setSelection(idx)
+        val userTypeLabels = arrayOf("Estudiante", "Personal Académico")
+        val spinnerUserType = styledSpinner(userTypeLabels, userTypeValues.indexOf(user?.userType ?: "ESTUDIANTE").coerceAtLeast(0))
+
+        val etIdentifier = outlinedEdit("Matrícula o Número de Empleado *", user?.identifier ?: "")
+        val etEmail = outlinedEdit("Correo Institucional *", user?.email ?: "", android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS)
+
+        // Fila Rol + Tipo
+        val rowRolTipo = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            lp.bottomMargin = dp4; layoutParams = lp
         }
+        val colRol = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).also { it.marginEnd = dp8 }
+        }
+        val colTipo = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        colRol.addView(fieldLabel("Rol *")); colRol.addView(spinnerRole)
+        colTipo.addView(fieldLabel("Tipo de Usuario *")); colTipo.addView(spinnerUserType)
+        rowRolTipo.addView(colRol); rowRolTipo.addView(colTipo)
+        root.addView(rowRolTipo)
+        root.addView(fieldLabel("Matrícula o Número de Empleado *")); root.addView(etIdentifier)
+        root.addView(fieldLabel("Correo Institucional *")); root.addView(etEmail)
 
-        val cbActive = CheckBox(ctx).apply { text = "Activo"; isChecked = user?.active ?: true }
-
-        layout.addView(label("Nombre *")); layout.addView(etName)
-        layout.addView(label("Apellido *")); layout.addView(etLastName)
-        layout.addView(label("Correo *")); layout.addView(etEmail)
-        layout.addView(label("Matrícula / ID")); layout.addView(etIdentifier)
-        layout.addView(label("Teléfono")); layout.addView(etPhone)
-        layout.addView(label("Fecha de nacimiento")); layout.addView(etBirthDate)
-        layout.addView(label("Rol")); layout.addView(spinnerRole)
-        layout.addView(label("Tipo de usuario")); layout.addView(spinnerUserType)
-        layout.addView(cbActive)
-
-        // Password only shown for create, or optionally for edit
-        val etPassword = EditText(ctx).apply {
-            hint = if (isCreate) "Contraseña *" else "Nueva contraseña (dejar vacío para no cambiar)"
+        // — CONTACTO Y SEGURIDAD —
+        root.addView(sectionTitle("CONTACTO Y SEGURIDAD"))
+        val etPhone = outlinedEdit("Teléfono *", user?.phone ?: "", android.text.InputType.TYPE_CLASS_PHONE)
+        val etPassword = outlinedEdit(
+            if (isCreate) "Contraseña *" else "Contraseña (opcional)",
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-        }
-        layout.addView(label(if (isCreate) "Contraseña" else "Contraseña")); layout.addView(etPassword)
+        )
 
-        val sv = ScrollView(ctx).apply { addView(layout) }
+        val rowTelPass = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            layoutParams = lp
+        }
+        val colTel = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).also { it.marginEnd = dp8 }
+        }
+        val colPass = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        colTel.addView(fieldLabel("Teléfono *")); colTel.addView(etPhone)
+        colPass.addView(fieldLabel("Contraseña")); colPass.addView(etPassword)
+        rowTelPass.addView(colTel); rowTelPass.addView(colPass)
+        root.addView(rowTelPass)
+
+        val sv = ScrollView(ctx).apply { addView(root) }
 
         val builder: () -> CreateUserRequest? = {
             val name = etName.text.toString().trim()
             val lastName = etLastName.text.toString().trim()
             val email = etEmail.text.toString().trim()
             val password = etPassword.text.toString()
-            if (name.isEmpty() || lastName.isEmpty() || email.isEmpty()) {
-                Toast.makeText(ctx, "Nombre, apellido y correo son requeridos", Toast.LENGTH_SHORT).show(); null
-            } else if (isCreate && password.isEmpty()) {
-                Toast.makeText(ctx, "La contraseña es requerida", Toast.LENGTH_SHORT).show(); null
-            } else CreateUserRequest(
-                name = name,
-                lastName = lastName,
-                email = email,
-                identifier = etIdentifier.text.toString().trim(),
-                password = password.ifEmpty { "NO_CHANGE" },
-                role = roleValues[spinnerRole.selectedItemPosition],
-                active = cbActive.isChecked,
-                userType = userTypeValues[spinnerUserType.selectedItemPosition],
-                birthDate = etBirthDate.text.toString().trim().ifEmpty { null },
-                phone = etPhone.text.toString().trim().ifEmpty { null }
-            )
+            when {
+                name.isEmpty() || lastName.isEmpty() || email.isEmpty() -> {
+                    Toast.makeText(ctx, "Nombre, apellidos y correo son requeridos", Toast.LENGTH_SHORT).show(); null
+                }
+                isCreate && password.isEmpty() -> {
+                    Toast.makeText(ctx, "La contraseña es requerida", Toast.LENGTH_SHORT).show(); null
+                }
+                else -> CreateUserRequest(
+                    name = name, lastName = lastName, email = email,
+                    identifier = etIdentifier.text.toString().trim(),
+                    password = password.ifEmpty { "NO_CHANGE" },
+                    role = roleValues[spinnerRole.selectedItemPosition],
+                    active = true,
+                    userType = userTypeValues[spinnerUserType.selectedItemPosition],
+                    birthDate = etBirthDate.text.toString().trim().ifEmpty { null },
+                    phone = etPhone.text.toString().trim().ifEmpty { null }
+                )
+            }
         }
         return Pair(sv, builder)
     }
@@ -201,9 +273,10 @@ class UsersFragment : Fragment() {
     private fun showCreateUserDialog() {
         val (view, buildRequest) = buildUserForm(isCreate = true)
         AlertDialog.Builder(requireContext())
-            .setTitle("Crear usuario")
+            .setTitle("Nuevo Usuario")
+            .setMessage("Completa la información del integrante.")
             .setView(view)
-            .setPositiveButton("Crear") { _, _ ->
+            .setPositiveButton("Guardar Cambios") { _, _ ->
                 val req = buildRequest() ?: return@setPositiveButton
                 lifecycleScope.launch {
                     try {
@@ -220,9 +293,10 @@ class UsersFragment : Fragment() {
     private fun showEditUserDialog(user: User) {
         val (view, buildRequest) = buildUserForm(user, isCreate = false)
         AlertDialog.Builder(requireContext())
-            .setTitle("Editar usuario")
+            .setTitle("Editar Usuario")
+            .setMessage("Actualiza la información del integrante.")
             .setView(view)
-            .setPositiveButton("Guardar") { _, _ ->
+            .setPositiveButton("Guardar Cambios") { _, _ ->
                 val req = buildRequest() ?: return@setPositiveButton
                 lifecycleScope.launch {
                     try {
@@ -394,7 +468,7 @@ class UserAdapter(
 
             // Botones
             findViewById<android.widget.ImageButton>(R.id.btnView).setOnClickListener { onView(u) }
-            findViewById<com.google.android.material.button.MaterialButton>(R.id.btnEdit).setOnClickListener { onEdit(u) }
+            findViewById<android.widget.ImageButton>(R.id.btnEdit).setOnClickListener { onEdit(u) }
 
             val btnToggle = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnToggle)
             btnToggle.text = if (u.active) "Desactivar" else "Activar"
