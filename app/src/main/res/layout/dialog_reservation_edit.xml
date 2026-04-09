@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Recurso y Tipo (solo lectura) -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginBottom="16dp">
+
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:layout_marginEnd="8dp"
+                android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="RECURSO" android:textSize="10sp" android:textStyle="bold"
+                    android:textColor="#6B7280" android:layout_marginBottom="4dp"/>
+                <TextView android:id="@+id/tvEditResource"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="—" android:textSize="15sp" android:textStyle="bold"
+                    android:textColor="#111827"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="TIPO" android:textSize="10sp" android:textStyle="bold"
+                    android:textColor="#6B7280" android:layout_marginBottom="4dp"/>
+                <TextView android:id="@+id/tvEditType"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="—" android:textSize="15sp" android:textStyle="bold"
+                    android:textColor="#111827"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Separador -->
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="#E5E7EB" android:layout_marginBottom="16dp"/>
+
+        <!-- Fecha inicio | Hora inicio -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginBottom="12dp">
+
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:layout_marginEnd="8dp"
+                android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Fecha inicio" android:textSize="12sp" android:textColor="#374151"
+                    android:layout_marginBottom="6dp"/>
+                <EditText android:id="@+id/etStartDate"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:hint="YYYY-MM-DD" android:inputType="date"
+                    android:background="@drawable/bg_detail_card" android:padding="10dp"
+                    android:textSize="13sp" android:textColor="#111827"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Hora inicio" android:textSize="12sp" android:textColor="#374151"
+                    android:layout_marginBottom="6dp"/>
+                <EditText android:id="@+id/etStartTime"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:hint="HH:MM" android:inputType="time"
+                    android:background="@drawable/bg_detail_card" android:padding="10dp"
+                    android:textSize="13sp" android:textColor="#111827"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Fecha devolución | Hora devolución -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginBottom="12dp">
+
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:layout_marginEnd="8dp"
+                android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Fecha devolución" android:textSize="12sp" android:textColor="#374151"
+                    android:layout_marginBottom="6dp"/>
+                <EditText android:id="@+id/etEndDate"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:hint="YYYY-MM-DD" android:inputType="date"
+                    android:background="@drawable/bg_detail_card" android:padding="10dp"
+                    android:textSize="13sp" android:textColor="#111827"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Hora devolución" android:textSize="12sp" android:textColor="#374151"
+                    android:layout_marginBottom="6dp"/>
+                <EditText android:id="@+id/etEndTime"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:hint="HH:MM" android:inputType="time"
+                    android:background="@drawable/bg_detail_card" android:padding="10dp"
+                    android:textSize="13sp" android:textColor="#111827"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Motivo -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Motivo" android:textSize="12sp" android:textColor="#374151"
+            android:layout_marginBottom="6dp"/>
+        <EditText android:id="@+id/etPurpose"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="Motivo de la solicitud" android:minLines="3"
+            android:gravity="top" android:inputType="textMultiLine"
+            android:background="@drawable/bg_detail_card" android:padding="10dp"
+            android:textSize="13sp" android:textColor="#111827"/>
+
+    </LinearLayout>
+</ScrollView>

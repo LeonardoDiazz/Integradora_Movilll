@@ -18,8 +18,8 @@ data class User(
     val lastName: String,
     val email: String,
     val phone: String?,
-    val role: String,
-    val active: Boolean,
+    val role: String?,
+    val active: Boolean?,
     val identifier: String?,
     val userType: String?,
     val birthDate: String?
@@ -38,15 +38,28 @@ data class CreateUserRequest(
     val phone: String?
 )
 
+data class UpdateUserRequest(
+    val name: String,
+    val lastName: String,
+    val email: String,
+    val identifier: String?,
+    val password: String?,
+    val role: String,
+    val active: Boolean,
+    val userType: String?,
+    val birthDate: String?,
+    val phone: String?
+)
+
 data class Space(
     val id: Long,
     val name: String,
     val category: String,
     val location: String,
     val capacity: Int,
-    val active: Boolean,
-    val availability: String,
-    val allowStudents: Boolean,
+    val active: Boolean?,
+    val availability: String?,
+    val allowStudents: Boolean?,
     val description: String
 )
 
@@ -56,9 +69,9 @@ data class Equipment(
     val name: String,
     val category: String,
     val description: String,
-    val allowStudents: Boolean,
-    val active: Boolean,
-    val equipmentCondition: String,
+    val allowStudents: Boolean?,
+    val active: Boolean?,
+    val equipmentCondition: String?,
     val createdAt: String?
 )
 

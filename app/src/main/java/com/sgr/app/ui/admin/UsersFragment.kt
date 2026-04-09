@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.sgr.app.R
 import com.sgr.app.databinding.FragmentUsersBinding
 import com.sgr.app.model.CreateUserRequest
+import com.sgr.app.model.UpdateUserRequest
 import com.sgr.app.model.User
 import com.sgr.app.network.RetrofitClient
 import kotlinx.coroutines.launch
@@ -199,20 +200,32 @@ class UsersFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            val req = CreateUserRequest(
-                name = name, lastName = lastName, email = email,
-                identifier = etIdentifier.text.toString().trim(),
-                password = password.ifEmpty { "NO_CHANGE" },
-                role = selectedRole, active = true,
-                userType = selectedType,
-                birthDate = etBirthDate.text.toString().trim().ifEmpty { null },
-                phone = etPhone.text.toString().trim().ifEmpty { null }
-            )
-
             lifecycleScope.launch {
                 try {
                     val api = RetrofitClient.create(ctx)
-                    val resp = if (isCreate) api.createUser(req) else api.updateUser(user!!.id, req)
+                    val resp = if (isCreate) {
+                        val req = CreateUserRequest(
+                            name = name, lastName = lastName, email = email,
+                            identifier = etIdentifier.text.toString().trim(),
+                            password = password,
+                            role = selectedRole, active = true,
+                            userType = selectedType,
+                            birthDate = etBirthDate.text.toString().trim().ifEmpty { null },
+                            phone = etPhone.text.toString().trim().ifEmpty { null }
+                        )
+                        api.createUser(req)
+                    } else {
+                        val req = UpdateUserRequest(
+                            name = name, lastName = lastName, email = email,
+                            identifier = etIdentifier.text.toString().trim().ifEmpty { null },
+                            password = password.ifEmpty { null },
+                            role = selectedRole, active = true,
+                            userType = selectedType,
+                            birthDate = etBirthDate.text.toString().trim().ifEmpty { null },
+                            phone = etPhone.text.toString().trim().ifEmpty { null }
+                        )
+                        api.updateUser(user!!.id, req)
+                    }
                     if (resp.isSuccessful) {
                         Toast.makeText(ctx, if (isCreate) "Usuario creado" else "Usuario actualizado", Toast.LENGTH_SHORT).show()
                         dialog.dismiss(); load()
@@ -235,7 +248,7 @@ class UsersFragment : Fragment() {
             "STAFF" -> "Personal"
             else -> "—"
         }
-        val activeLabel = if (user.active) "Activo" else "Inactivo"
+        val activeLabel = if (user.active == true) "Activo" else "Inactivo"
 
         val scroll = ScrollView(ctx)
         val root = LinearLayout(ctx).apply {
@@ -366,8 +379,8 @@ class UserAdapter(
 
             // Estado badge
             val tvStatus = findViewById<TextView>(R.id.tvStatus)
-            tvStatus.text = if (u.active) "Activo" else "Inactivo"
-            tvStatus.setBackgroundColor(if (u.active) 0xFF10B981.toInt() else 0xFFEF4444.toInt())
+            tvStatus.text = if (u.active == true) "Activo" else "Inactivo"
+            tvStatus.setBackgroundColor(if (u.active == true) 0xFF10B981.toInt() else 0xFFEF4444.toInt())
 
             // Rol badge
             val isAdmin = u.role == "ADMIN"

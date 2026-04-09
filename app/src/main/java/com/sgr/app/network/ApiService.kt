@@ -34,7 +34,7 @@ interface ApiService {
     suspend fun createUser(@Body request: CreateUserRequest): Response<ResponseBody>
 
     @PUT("api/users/{id}")
-    suspend fun updateUser(@Path("id") id: Long, @Body request: CreateUserRequest): Response<ResponseBody>
+    suspend fun updateUser(@Path("id") id: Long, @Body request: UpdateUserRequest): Response<ResponseBody>
 
     @PATCH("api/users/{id}/toggle-status")
     suspend fun toggleUserStatus(@Path("id") id: Long): Response<ResponseBody>

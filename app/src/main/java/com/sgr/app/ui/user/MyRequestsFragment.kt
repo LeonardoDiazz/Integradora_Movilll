@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.os.Bundle
 import android.view.*
 import android.widget.*
+import android.widget.ImageButton
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -94,21 +95,7 @@ class MyRequestsFragment : Fragment() {
                         binding.recyclerView.adapter = MyReservationAdapter(
                             items = page.content,
                             onView = { showViewReservationDialog(it) },
-                            onCancel = { reservation ->
-                                AlertDialog.Builder(requireContext())
-                                    .setTitle("Cancelar solicitud")
-                                    .setMessage("¿Deseas cancelar esta solicitud?")
-                                    .setPositiveButton("Sí") { _, _ ->
-                                        lifecycleScope.launch {
-                                            try {
-                                                api.cancelMyReservation(reservation.id, session.userId)
-                                                Toast.makeText(requireContext(), "Solicitud cancelada", Toast.LENGTH_SHORT).show()
-                                                load()
-                                            } catch (_: Exception) {}
-                                        }
-                                    }
-                                    .setNegativeButton("No", null).show()
-                            },
+                            onCancel = { showCancelConfirmDialog(it, session) },
                             onEdit = { showEditReservationDialog(it) },
                             onViewRejection = { showRejectionReasonDialog(it) }
                         )
@@ -120,30 +107,48 @@ class MyRequestsFragment : Fragment() {
         }
     }
 
+    private fun statusLabel(status: String) = when (status) {
+        "PENDIENTE" -> "Pendiente"
+        "APROBADA" -> "En préstamo"
+        "RECHAZADA" -> "Rechazada"
+        "CANCELADA" -> "Cancelada"
+        "DEVUELTA" -> "Devuelta"
+        else -> status
+    }
+
     private fun showViewReservationDialog(r: Reservation) {
-        val resourceName = if (r.resourceType == "SPACE") r.spaceName else r.equipmentName
-        val resourceType = if (r.resourceType == "SPACE") "Espacio" else "Equipo"
-        val statusLabel = mapOf(
-            "PENDIENTE" to "Pendiente",
-            "APROBADA" to "En préstamo",
-            "RECHAZADA" to "Rechazada",
-            "CANCELADA" to "Cancelada",
-            "DEVUELTA" to "Devuelta"
-        )
-        val msg = """
-            Tipo: $resourceType
-            Recurso: ${resourceName ?: "—"}
-            Fecha: ${r.reservationDate}
-            Horario: ${r.startTime} - ${r.endTime}
-            Estado: ${statusLabel[r.status] ?: r.status}
-            Motivo: ${r.purpose}
-            Observaciones: ${r.observations ?: "—"}
-            Comentario admin: ${r.adminComment ?: "—"}
-        """.trimIndent()
-        AlertDialog.Builder(requireContext())
-            .setTitle("Detalle de solicitud #${r.id}")
-            .setMessage(msg)
-            .setPositiveButton("Cerrar", null).show()
+        try {
+            val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_reservation_detail, null)
+            val resourceName = if (r.resourceType == "SPACE") r.spaceName else r.equipmentName
+            val resourceType = if (r.resourceType == "SPACE") "Espacio" else "Equipo"
+
+            view.findViewById<TextView>(R.id.tvDetailId).text = "#${r.id}"
+            view.findViewById<TextView>(R.id.tvDetailStatus).text = statusLabel(r.status ?: "")
+            view.findViewById<TextView>(R.id.tvDetailResource).text = resourceName ?: "—"
+            view.findViewById<TextView>(R.id.tvDetailType).text = resourceType
+            view.findViewById<TextView>(R.id.tvDetailDate).text = r.reservationDate ?: "—"
+            view.findViewById<TextView>(R.id.tvDetailStartTime).text = r.startTime ?: "—"
+            view.findViewById<TextView>(R.id.tvDetailEndDate).text = r.reservationDate ?: "—"
+            view.findViewById<TextView>(R.id.tvDetailEndTime).text = r.endTime ?: "—"
+            view.findViewById<TextView>(R.id.tvDetailPurpose).text = r.purpose?.ifBlank { "—" } ?: "—"
+
+            val adminComment = r.adminComment?.takeIf { it.isNotBlank() }
+            val layoutAdmin = view.findViewById<View>(R.id.layoutAdminComment)
+            if (adminComment != null) {
+                layoutAdmin.visibility = View.VISIBLE
+                view.findViewById<TextView>(R.id.tvDetailAdminComment).text = adminComment
+            } else {
+                layoutAdmin.visibility = View.GONE
+            }
+
+            AlertDialog.Builder(requireContext())
+                .setTitle("Detalles de la Solicitud")
+                .setView(view)
+                .setPositiveButton("Cerrar", null)
+                .show()
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Error al mostrar detalle", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun showRejectionReasonDialog(r: Reservation) {
@@ -154,42 +159,65 @@ class MyRequestsFragment : Fragment() {
             .setPositiveButton("Cerrar", null).show()
     }
 
+    private fun showCancelConfirmDialog(r: Reservation, session: SessionManager) {
+        val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_cancel_confirm, null)
+        val resourceName = if (r.resourceType == "SPACE") r.spaceName else r.equipmentName
+        view.findViewById<TextView>(R.id.tvCancelQuestion).text =
+            "¿Estás seguro que deseas cancelar ${resourceName ?: "esta solicitud"}?"
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(view)
+            .setCancelable(false)
+            .create()
+
+        view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnKeep)
+            .setOnClickListener { dialog.dismiss() }
+        view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnConfirmCancel)
+            .setOnClickListener {
+                dialog.dismiss()
+                lifecycleScope.launch {
+                    try {
+                        RetrofitClient.create(requireContext()).cancelMyReservation(r.id, session.userId)
+                        Toast.makeText(requireContext(), "Solicitud cancelada", Toast.LENGTH_SHORT).show()
+                        load()
+                    } catch (_: Exception) {
+                        Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        dialog.show()
+    }
+
     private fun showEditReservationDialog(r: Reservation) {
-        val ctx = requireContext()
-        val layout = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(48, 16, 48, 0) }
+        val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_reservation_edit, null)
+        val resourceName = if (r.resourceType == "SPACE") r.spaceName else r.equipmentName
+        val resourceType = if (r.resourceType == "SPACE") "Espacio" else "Equipo"
 
-        fun label(text: String) = TextView(ctx).apply { this.text = text; textSize = 12f; setPadding(0, 12, 0, 2) }
+        view.findViewById<TextView>(R.id.tvEditResource).text = resourceName ?: "—"
+        view.findViewById<TextView>(R.id.tvEditType).text = resourceType
 
-        val etDate = EditText(ctx).apply { hint = "YYYY-MM-DD"; setText(r.reservationDate) }
-        val etStart = EditText(ctx).apply { hint = "HH:MM"; setText(r.startTime) }
-        val etEnd = EditText(ctx).apply { hint = "HH:MM"; setText(r.endTime) }
-        val etPurpose = EditText(ctx).apply { hint = "Motivo de la reserva"; minLines = 3; setText(r.purpose) }
-        val etObs = EditText(ctx).apply { hint = "Observaciones (opcional)"; setText(r.observations ?: "") }
+        val etStartDate = view.findViewById<EditText>(R.id.etStartDate).apply { setText(r.reservationDate ?: "") }
+        val etStartTime = view.findViewById<EditText>(R.id.etStartTime).apply { setText(r.startTime ?: "") }
+        val etEndDate = view.findViewById<EditText>(R.id.etEndDate).apply { setText(r.reservationDate ?: "") }
+        val etEndTime = view.findViewById<EditText>(R.id.etEndTime).apply { setText(r.endTime ?: "") }
+        val etPurpose = view.findViewById<EditText>(R.id.etPurpose).apply { setText(r.purpose ?: "") }
 
-        layout.addView(label("Fecha de reserva *")); layout.addView(etDate)
-        layout.addView(label("Hora inicio *")); layout.addView(etStart)
-        layout.addView(label("Hora fin *")); layout.addView(etEnd)
-        layout.addView(label("Motivo *")); layout.addView(etPurpose)
-        layout.addView(label("Observaciones")); layout.addView(etObs)
+        val session = SessionManager(requireContext())
 
-        val sv = ScrollView(ctx).apply { addView(layout) }
-        val session = SessionManager(ctx)
-
-        AlertDialog.Builder(ctx)
-            .setTitle("Editar solicitud #${r.id}")
-            .setView(sv)
-            .setPositiveButton("Guardar") { _, _ ->
-                val date = etDate.text.toString().trim()
-                val start = etStart.text.toString().trim()
-                val end = etEnd.text.toString().trim()
+        AlertDialog.Builder(requireContext())
+            .setTitle("Modificar Solicitud")
+            .setView(view)
+            .setPositiveButton("Guardar Cambios") { _, _ ->
+                val date = etStartDate.text.toString().trim()
+                val start = etStartTime.text.toString().trim()
+                val end = etEndTime.text.toString().trim()
                 val purpose = etPurpose.text.toString().trim()
                 if (date.isEmpty() || start.isEmpty() || end.isEmpty() || purpose.isEmpty()) {
-                    Toast.makeText(ctx, "Completa todos los campos requeridos", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Completa todos los campos requeridos", Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
                 lifecycleScope.launch {
                     try {
-                        val api = RetrofitClient.create(ctx)
                         val req = UpdateReservationRequest(
                             requesterId = session.userId,
                             resourceType = r.resourceType,
@@ -199,13 +227,13 @@ class MyRequestsFragment : Fragment() {
                             startTime = start,
                             endTime = end,
                             purpose = purpose,
-                            observations = etObs.text.toString().trim().ifEmpty { null }
+                            observations = r.observations
                         )
-                        val resp = api.updateMyReservation(r.id, session.userId, req)
+                        val resp = RetrofitClient.create(requireContext()).updateMyReservation(r.id, session.userId, req)
                         if (resp.isSuccessful) {
-                            Toast.makeText(ctx, "Solicitud actualizada", Toast.LENGTH_SHORT).show(); load()
-                        } else Toast.makeText(ctx, "Error: ${resp.code()}", Toast.LENGTH_SHORT).show()
-                    } catch (_: Exception) { Toast.makeText(ctx, "Error de conexión", Toast.LENGTH_SHORT).show() }
+                            Toast.makeText(requireContext(), "Solicitud actualizada", Toast.LENGTH_SHORT).show(); load()
+                        } else Toast.makeText(requireContext(), "Error: ${resp.code()}", Toast.LENGTH_SHORT).show()
+                    } catch (_: Exception) { Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show() }
                 }
             }
             .setNegativeButton("Cancelar", null).show()
@@ -225,7 +253,7 @@ class MyReservationAdapter(
     inner class VH(val view: View) : RecyclerView.ViewHolder(view)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
-        VH(LayoutInflater.from(parent.context).inflate(R.layout.item_reservation, parent, false))
+        VH(LayoutInflater.from(parent.context).inflate(R.layout.item_my_reservation, parent, false))
 
     override fun getItemCount() = items.size
 
@@ -233,58 +261,55 @@ class MyReservationAdapter(
         val r = items[position]
         holder.view.apply {
             val resourceName = if (r.resourceType == "SPACE") r.spaceName else r.equipmentName
-            findViewById<TextView>(R.id.tvRequester).text = resourceName ?: "—"
-            findViewById<TextView>(R.id.tvResource).text = r.purpose
-            findViewById<TextView>(R.id.tvDate).text = "${r.reservationDate} | ${r.startTime} - ${r.endTime}"
+            val resourceType = if (r.resourceType == "SPACE") "Espacio" else "Equipo"
 
+            findViewById<TextView>(R.id.tvId).text = "#${r.id}"
+            findViewById<TextView>(R.id.tvResourceName).text = resourceName ?: "—"
+            findViewById<TextView>(R.id.tvType).text = resourceType
+            findViewById<TextView>(R.id.tvDate).text = r.reservationDate ?: "—"
+            findViewById<TextView>(R.id.tvSchedule).text = "${r.startTime ?: "—"} - ${r.endTime ?: "—"}"
+
+            // Badge estado
             val tvStatus = findViewById<TextView>(R.id.tvStatus)
-            val statusLabel = mapOf(
-                "PENDIENTE" to "Pendiente",
-                "APROBADA" to "En préstamo",
-                "RECHAZADA" to "Rechazada",
-                "CANCELADA" to "Cancelada",
-                "DEVUELTA" to "Devuelta"
-            )
-            tvStatus.text = statusLabel[r.status] ?: r.status
-            tvStatus.setBackgroundColor(when (r.status) {
-                "PENDIENTE" -> 0xFFF59E0B.toInt()
-                "APROBADA" -> 0xFF10B981.toInt()
-                "RECHAZADA" -> 0xFFEF4444.toInt()
-                "DEVUELTA" -> 0xFF2563EB.toInt()
-                else -> 0xFF6B7280.toInt()
-            })
+            tvStatus.text = when (r.status) {
+                "PENDIENTE" -> "Pendiente"
+                "APROBADA" -> "En préstamo"
+                "RECHAZADA" -> "Rechazada"
+                "CANCELADA" -> "Cancelada"
+                "DEVUELTA" -> "Devuelta"
+                else -> r.status
+            }
+            when (r.status) {
+                "PENDIENTE" -> { tvStatus.setBackgroundResource(R.drawable.bg_badge_yellow); tvStatus.setTextColor(0xFF92400E.toInt()) }
+                "APROBADA" -> { tvStatus.setBackgroundResource(R.drawable.bg_badge_green); tvStatus.setTextColor(0xFF065F46.toInt()) }
+                "RECHAZADA" -> { tvStatus.setBackgroundResource(R.drawable.bg_badge_red); tvStatus.setTextColor(0xFF991B1B.toInt()) }
+                "DEVUELTA" -> { tvStatus.setBackgroundResource(R.drawable.bg_icon_btn); tvStatus.setTextColor(0xFF1D4ED8.toInt()) }
+                else -> { tvStatus.setBackgroundResource(R.drawable.bg_detail_card); tvStatus.setTextColor(0xFF6B7280.toInt()) }
+            }
 
-            val layoutActions = findViewById<LinearLayout>(R.id.layoutActions)
-            val btnApprove = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnApprove)
-            val btnReject = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnReject)
-            val btnReturn = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnReturn)
-            val btnViewDetail = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnViewDetail)
-            val btnEditReservation = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnEditReservation)
-            val btnViewRejection = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnViewRejection)
+            // Botones
+            val btnView = findViewById<ImageButton>(R.id.btnView)
+            val btnEdit = findViewById<ImageButton>(R.id.btnEdit)
+            val btnCancel = findViewById<ImageButton>(R.id.btnCancel)
+            val btnRejection = findViewById<ImageButton>(R.id.btnRejection)
 
-            // Always show view detail
-            btnViewDetail.setOnClickListener { onView(r) }
-
-            btnReturn.visibility = View.GONE
+            btnView.setOnClickListener { onView(r) }
 
             if (r.status == "PENDIENTE") {
-                layoutActions.visibility = View.VISIBLE
-                btnReject.visibility = View.GONE
-                btnApprove.text = "Cancelar"
-                btnApprove.backgroundTintList = android.content.res.ColorStateList.valueOf(0xFFDC2626.toInt())
-                btnApprove.setOnClickListener { onCancel(r) }
-                btnEditReservation.visibility = View.VISIBLE
-                btnEditReservation.setOnClickListener { onEdit(r) }
-                btnViewRejection.visibility = View.GONE
+                btnEdit.alpha = 1f; btnEdit.isEnabled = true
+                btnCancel.alpha = 1f; btnCancel.isEnabled = true
+                btnEdit.setOnClickListener { onEdit(r) }
+                btnCancel.setOnClickListener { onCancel(r) }
+                btnRejection.visibility = View.GONE
             } else if (r.status == "RECHAZADA") {
-                layoutActions.visibility = View.GONE
-                btnEditReservation.visibility = View.GONE
-                btnViewRejection.visibility = View.VISIBLE
-                btnViewRejection.setOnClickListener { onViewRejection(r) }
+                btnEdit.alpha = 0.3f; btnEdit.isEnabled = false
+                btnCancel.alpha = 0.3f; btnCancel.isEnabled = false
+                btnRejection.visibility = View.VISIBLE
+                btnRejection.setOnClickListener { onViewRejection(r) }
             } else {
-                layoutActions.visibility = View.GONE
-                btnEditReservation.visibility = View.GONE
-                btnViewRejection.visibility = View.GONE
+                btnEdit.alpha = 0.3f; btnEdit.isEnabled = false
+                btnCancel.alpha = 0.3f; btnCancel.isEnabled = false
+                btnRejection.visibility = View.GONE
             }
         }
     }

@@ -113,7 +113,7 @@ class NewRequestFragment : Fragment() {
     private fun loadResources() {
         val search = binding.etSearch.text?.toString()?.trim() ?: ""
         val session = SessionManager(requireContext())
-        val isStudent = session.userRole == "STUDENT" || session.userRole == "STUDENTS"
+        val isStudent = session.userRole == "STUDENT"
 
         lifecycleScope.launch {
             try {
@@ -122,26 +122,36 @@ class NewRequestFragment : Fragment() {
 
                 if (currentTab == "SPACE") {
                     val resp = api.getSpaces(currentPage, 10, "", search)
-                    if (resp.isSuccessful) {
-                        val page = resp.body() ?: return@launch
-                        totalPages = page.totalPages.coerceAtLeast(1)
-                        spaces = page.content
-                        val filtered = page.content
-                            .filter { it.active && it.availability == "DISPONIBLE" }
-                            .filter { !isStudent || it.allowStudents }
-                        items = filtered.map { ResourceItem(it.id, it.name, "SPACE", "📍 ${it.location} • 👥 ${it.capacity}", "🏢") }
-                    } else return@launch
+                    if (!resp.isSuccessful) {
+                        Toast.makeText(requireContext(), "Error al cargar espacios: ${resp.code()}", Toast.LENGTH_SHORT).show()
+                        return@launch
+                    }
+                    val page = resp.body() ?: return@launch
+                    totalPages = page.totalPages.coerceAtLeast(1)
+                    spaces = page.content
+                    val filtered = page.content
+                        .filter { it.active != false }
+                        .filter { it.availability?.uppercase() == "DISPONIBLE" }
+                        .filter { !isStudent || it.allowStudents != false }
+                    items = filtered.map {
+                        ResourceItem(it.id, it.name, "SPACE", "📍 ${it.location} • 👥 ${it.capacity}", "🏢")
+                    }
                 } else {
                     val resp = api.getEquipments(currentPage, 10, "", search)
-                    if (resp.isSuccessful) {
-                        val page = resp.body() ?: return@launch
-                        totalPages = page.totalPages.coerceAtLeast(1)
-                        equipments = page.content
-                        val filtered = page.content
-                            .filter { it.active && it.equipmentCondition == "DISPONIBLE" }
-                            .filter { !isStudent || it.allowStudents }
-                        items = filtered.map { ResourceItem(it.id, it.name, "EQUIPMENT", "${it.category} • ${it.inventoryNumber}", "📦") }
-                    } else return@launch
+                    if (!resp.isSuccessful) {
+                        Toast.makeText(requireContext(), "Error al cargar equipos: ${resp.code()}", Toast.LENGTH_SHORT).show()
+                        return@launch
+                    }
+                    val page = resp.body() ?: return@launch
+                    totalPages = page.totalPages.coerceAtLeast(1)
+                    equipments = page.content
+                    val filtered = page.content
+                        .filter { it.active != false }
+                        .filter { it.equipmentCondition?.uppercase() == "DISPONIBLE" }
+                        .filter { !isStudent || it.allowStudents != false }
+                    items = filtered.map {
+                        ResourceItem(it.id, it.name, "EQUIPMENT", "${it.category} • ${it.inventoryNumber}", "📦")
+                    }
                 }
 
                 binding.tvPage.text = "Pág ${currentPage + 1} / $totalPages"
@@ -158,7 +168,9 @@ class NewRequestFragment : Fragment() {
                         (binding.recyclerResources.adapter as ResourceAdapter).setSelected(res.id)
                     }
                 }
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -171,6 +183,35 @@ class NewRequestFragment : Fragment() {
         binding.tvBannerIcon.text = res.icon
         binding.tvBannerTitle.text = res.name
         binding.tvBannerSub.text = "${res.meta} • ${if (res.resourceType == "SPACE") "Espacio" else "Equipo"}"
+
+        if (res.resourceType == "SPACE") {
+            binding.cardSpaceEquipment.visibility = View.VISIBLE
+            loadSpaceEquipment(res.id)
+        } else {
+            binding.cardSpaceEquipment.visibility = View.GONE
+        }
+    }
+
+    private fun loadSpaceEquipment(spaceId: Long) {
+        lifecycleScope.launch {
+            try {
+                val api = RetrofitClient.create(requireContext())
+                val resp = api.getEquipments(0, 50, "", "")
+                if (resp.isSuccessful) {
+                    val all = resp.body()?.content ?: emptyList()
+                    val filtered = all.filter { it.active }
+                    binding.rvSpaceEquipment.layoutManager = LinearLayoutManager(requireContext())
+                    if (filtered.isEmpty()) {
+                        binding.tvNoEquipment.visibility = View.VISIBLE
+                        binding.rvSpaceEquipment.visibility = View.GONE
+                    } else {
+                        binding.tvNoEquipment.visibility = View.GONE
+                        binding.rvSpaceEquipment.visibility = View.VISIBLE
+                        binding.rvSpaceEquipment.adapter = SpaceEquipmentAdapter(filtered)
+                    }
+                }
+            } catch (_: Exception) {}
+        }
     }
 
     private fun goToStep1() {
@@ -180,13 +221,13 @@ class NewRequestFragment : Fragment() {
     }
 
     private fun submit() {
-        val date = binding.etDate.text?.toString()?.trim() ?: ""
+        val startDate = binding.etDate.text?.toString()?.trim() ?: ""
         val startTime = binding.etStartTime.text?.toString()?.trim() ?: ""
         val endTime = binding.etEndTime.text?.toString()?.trim() ?: ""
         val purpose = binding.etPurpose.text?.toString()?.trim() ?: ""
         val res = selectedResource ?: return
 
-        if (date.isEmpty() || startTime.isEmpty() || endTime.isEmpty() || purpose.isEmpty()) {
+        if (startDate.isEmpty() || startTime.isEmpty() || endTime.isEmpty() || purpose.isEmpty()) {
             Toast.makeText(requireContext(), "Completa todos los campos", Toast.LENGTH_SHORT).show()
             return
         }
@@ -207,7 +248,7 @@ class NewRequestFragment : Fragment() {
                         resourceType = res.resourceType,
                         spaceId = if (res.resourceType == "SPACE") res.id else null,
                         equipmentId = if (res.resourceType == "EQUIPMENT") res.id else null,
-                        reservationDate = date,
+                        reservationDate = startDate,
                         startTime = startTime,
                         endTime = endTime,
                         purpose = purpose,
@@ -216,10 +257,10 @@ class NewRequestFragment : Fragment() {
                 )
                 if (response.isSuccessful) {
                     Toast.makeText(requireContext(), "¡Solicitud enviada exitosamente!", Toast.LENGTH_LONG).show()
-                    // Reset form
                     selectedResource = null
                     binding.btnContinue.isEnabled = false
                     binding.etDate.text?.clear()
+                    binding.etEndDate.text?.clear()
                     binding.etStartTime.text?.clear()
                     binding.etEndTime.text?.clear()
                     binding.etPurpose.text?.clear()
@@ -266,6 +307,45 @@ class ResourceAdapter(
             val check = findViewById<TextView>(R.id.tvCheckMark)
             check.visibility = if (isSelected) View.VISIBLE else View.GONE
             setOnClickListener { onSelect(item) }
+        }
+    }
+}
+
+class SpaceEquipmentAdapter(
+    private val items: List<Equipment>
+) : RecyclerView.Adapter<SpaceEquipmentAdapter.VH>() {
+
+    inner class VH(val view: View) : RecyclerView.ViewHolder(view)
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
+        VH(LayoutInflater.from(parent.context).inflate(R.layout.item_space_equipment, parent, false))
+
+    override fun getItemCount() = items.size
+
+    override fun onBindViewHolder(holder: VH, position: Int) {
+        val eq = items[position]
+        holder.view.apply {
+            findViewById<TextView>(R.id.tvEqName).text = eq.name
+            findViewById<TextView>(R.id.tvEqInv).text = eq.inventoryNumber
+
+            val tvCond = findViewById<TextView>(R.id.tvEqCondition)
+            when (eq.equipmentCondition) {
+                "DISPONIBLE" -> {
+                    tvCond.text = "Disponible"
+                    tvCond.setBackgroundResource(R.drawable.bg_badge_green)
+                    tvCond.setTextColor(0xFF065F46.toInt())
+                }
+                "EN_USO" -> {
+                    tvCond.text = "En uso"
+                    tvCond.setBackgroundResource(R.drawable.bg_badge_yellow)
+                    tvCond.setTextColor(0xFF92400E.toInt())
+                }
+                else -> {
+                    tvCond.text = "Mantenimiento"
+                    tvCond.setBackgroundResource(R.drawable.bg_badge_red)
+                    tvCond.setTextColor(0xFF991B1B.toInt())
+                }
+            }
         }
     }
 }

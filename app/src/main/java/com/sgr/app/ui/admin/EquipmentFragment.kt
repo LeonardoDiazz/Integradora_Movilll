@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.os.Bundle
 import android.view.*
 import android.widget.*
+import android.widget.ImageButton
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -216,46 +217,60 @@ class EquipmentFragment : Fragment() {
     }
 
     private fun showViewEquipmentDialog(eq: Equipment) {
-        val allowStudents = if (eq.allowStudents) "Sí" else "No"
-        val active = if (eq.active) "Activo" else "Inactivo"
-        val msg = """
-            Nombre: ${eq.name}
-            No. Inventario: ${eq.inventoryNumber}
-            Categoría: ${eq.category}
-            Condición: ${eq.equipmentCondition}
-            Permite estudiantes: $allowStudents
-            Estado: $active
-            Descripción: ${eq.description}
-        """.trimIndent()
-        AlertDialog.Builder(requireContext())
-            .setTitle("Detalle del equipo")
-            .setMessage(msg)
-            .setPositiveButton("Cerrar", null).show()
+        try {
+            val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_equipment_detail, null)
+            view.findViewById<TextView>(R.id.tvDetailInvNumber).text = eq.inventoryNumber.ifBlank { "—" }
+            view.findViewById<TextView>(R.id.tvDetailName).text = eq.name.ifBlank { "—" }
+            view.findViewById<TextView>(R.id.tvDetailCategory).text = eq.category.ifBlank { "—" }
+            view.findViewById<TextView>(R.id.tvDetailStudents).text = if (eq.allowStudents == true) "Permitido" else "Restringido"
+            view.findViewById<TextView>(R.id.tvDetailDescription).text = eq.description.ifBlank { "—" }
+            view.findViewById<TextView>(R.id.tvDetailStatus).text = if (eq.active == true) "Activo" else "Inactivo"
+            view.findViewById<TextView>(R.id.tvDetailCondition).text = when (eq.equipmentCondition) {
+                "DISPONIBLE" -> "Disponible"
+                "EN_USO" -> "En uso"
+                "MANTENIMIENTO" -> "Mantenimiento"
+                else -> eq.equipmentCondition?.ifBlank { "—" } ?: "—"
+            }
+            AlertDialog.Builder(requireContext())
+                .setTitle("Detalle de Equipo")
+                .setView(view)
+                .setPositiveButton("Cerrar", null)
+                .show()
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Error al mostrar detalle", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun showEquipmentHistory(eq: Equipment) {
+        val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_equipment_history, null)
+        view.findViewById<TextView>(R.id.tvHistoryEquipName).text = "🔶 ${eq.name.uppercase()}"
+        view.findViewById<View>(R.id.layoutEmpty).visibility = View.VISIBLE
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Historial de Reservas")
+            .setView(view)
+            .setPositiveButton("Cerrar", null)
+            .show()
+
         lifecycleScope.launch {
             try {
                 val resp = RetrofitClient.create(requireContext()).getEquipmentHistory(eq.id)
                 if (resp.isSuccessful) {
                     val items = resp.body() ?: emptyList()
-                    showHistoryDialog("Historial: ${eq.name}", items)
+                    val layoutEmpty = view.findViewById<View>(R.id.layoutEmpty)
+                    val rvHistory = view.findViewById<RecyclerView>(R.id.rvHistory)
+                    if (items.isEmpty()) {
+                        layoutEmpty.visibility = View.VISIBLE
+                        rvHistory.visibility = View.GONE
+                    } else {
+                        layoutEmpty.visibility = View.GONE
+                        rvHistory.visibility = View.VISIBLE
+                        rvHistory.layoutManager = LinearLayoutManager(requireContext())
+                        rvHistory.adapter = EquipmentHistoryAdapter(items)
+                    }
                 } else Toast.makeText(requireContext(), "Error al cargar historial", Toast.LENGTH_SHORT).show()
             } catch (_: Exception) { Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show() }
         }
-    }
-
-    private fun showHistoryDialog(title: String, items: List<HistoryItem>) {
-        if (items.isEmpty()) {
-            AlertDialog.Builder(requireContext()).setTitle(title).setMessage("Sin historial registrado.").setPositiveButton("Cerrar", null).show()
-            return
-        }
-        val msg = items.joinToString("\n\n") { h ->
-            "• ${h.action ?: "Acción"}\n  Por: ${h.changedBy ?: "—"}\n  ${h.changedAt ?: ""}\n  ${h.details ?: ""}"
-        }
-        val tv = TextView(requireContext()).apply { text = msg; setPadding(48, 24, 48, 0); textSize = 13f }
-        val sv = ScrollView(requireContext()).apply { addView(tv) }
-        AlertDialog.Builder(requireContext()).setTitle(title).setView(sv).setPositiveButton("Cerrar", null).show()
     }
 
     override fun onDestroyView() { super.onDestroyView(); _binding = null }
@@ -272,31 +287,82 @@ class EquipmentAdapter(
     inner class VH(val view: View) : RecyclerView.ViewHolder(view)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
-        VH(LayoutInflater.from(parent.context).inflate(R.layout.item_generic, parent, false))
+        VH(LayoutInflater.from(parent.context).inflate(R.layout.item_equipment, parent, false))
 
     override fun getItemCount() = items.size
 
     override fun onBindViewHolder(holder: VH, position: Int) {
         val e = items[position]
         holder.view.apply {
-            findViewById<TextView>(R.id.tvTitle).text = e.name
-            findViewById<TextView>(R.id.tvSubtitle).text = "${e.category} | No. ${e.inventoryNumber}"
-            findViewById<TextView>(R.id.tvDetail).text = e.description
-            val badge = findViewById<TextView>(R.id.tvBadge)
-            badge.text = e.equipmentCondition
-            badge.setBackgroundColor(when (e.equipmentCondition) {
-                "DISPONIBLE" -> 0xFF10B981.toInt()
-                "EN_USO" -> 0xFFF59E0B.toInt()
-                else -> 0xFFEF4444.toInt()
-            })
-            findViewById<com.google.android.material.button.MaterialButton>(R.id.btnView).setOnClickListener { onView(e) }
-            findViewById<com.google.android.material.button.MaterialButton>(R.id.btnEdit).setOnClickListener { onEdit(e) }
-            val btnHistory = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnHistory)
-            btnHistory.visibility = View.VISIBLE
-            btnHistory.setOnClickListener { onHistory(e) }
-            findViewById<com.google.android.material.button.MaterialButton>(R.id.btnToggle).apply {
-                text = if (e.active) "Desactivar" else "Activar"
-                setOnClickListener { onToggle(e) }
+            findViewById<TextView>(R.id.tvInvNumber).text = e.inventoryNumber
+            findViewById<TextView>(R.id.tvEquipName).text = e.name
+            findViewById<TextView>(R.id.tvCategory).text = e.category.ifBlank { "—" }
+            findViewById<TextView>(R.id.tvAccess).text = if (e.allowStudents == true) "Alumnos" else "Restringido"
+            findViewById<TextView>(R.id.tvDescription).text = e.description.ifBlank { "—" }
+
+            // Badge ESTADO
+            val badgeEstado = findViewById<TextView>(R.id.tvBadgeEstado)
+            if (e.active == true) {
+                badgeEstado.text = "Activo"
+                badgeEstado.setBackgroundResource(R.drawable.bg_badge_green)
+                badgeEstado.setTextColor(0xFF065F46.toInt())
+            } else {
+                badgeEstado.text = "Inactivo"
+                badgeEstado.setBackgroundResource(R.drawable.bg_badge_red)
+                badgeEstado.setTextColor(0xFF991B1B.toInt())
+            }
+
+            // Badge CONDICIÓN
+            val badgeCond = findViewById<TextView>(R.id.tvBadgeCond)
+            when (e.equipmentCondition ?: "") {
+                "DISPONIBLE" -> {
+                    badgeCond.text = "Disponible"
+                    badgeCond.setBackgroundResource(R.drawable.bg_badge_green)
+                    badgeCond.setTextColor(0xFF065F46.toInt())
+                }
+                "EN_USO" -> {
+                    badgeCond.text = "En uso"
+                    badgeCond.setBackgroundResource(R.drawable.bg_badge_yellow)
+                    badgeCond.setTextColor(0xFF92400E.toInt())
+                }
+                else -> {
+                    badgeCond.text = "Mantenimiento"
+                    badgeCond.setBackgroundResource(R.drawable.bg_badge_red)
+                    badgeCond.setTextColor(0xFF991B1B.toInt())
+                }
+            }
+
+            findViewById<ImageButton>(R.id.btnView).setOnClickListener { onView(e) }
+            findViewById<ImageButton>(R.id.btnEdit).setOnClickListener { onEdit(e) }
+            findViewById<ImageButton>(R.id.btnHistory).setOnClickListener { onHistory(e) }
+            findViewById<ImageButton>(R.id.btnToggle).setOnClickListener { onToggle(e) }
+        }
+    }
+}
+
+class EquipmentHistoryAdapter(
+    private val items: List<HistoryItem>
+) : RecyclerView.Adapter<EquipmentHistoryAdapter.VH>() {
+
+    inner class VH(val view: View) : RecyclerView.ViewHolder(view)
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
+        VH(LayoutInflater.from(parent.context).inflate(R.layout.item_history, parent, false))
+
+    override fun getItemCount() = items.size
+
+    override fun onBindViewHolder(holder: VH, position: Int) {
+        val h = items[position]
+        holder.view.apply {
+            findViewById<TextView>(R.id.tvHistoryAction).text = h.action ?: "Acción"
+            findViewById<TextView>(R.id.tvHistoryDate).text = h.changedAt?.take(10) ?: "—"
+            findViewById<TextView>(R.id.tvHistoryBy).text = "Por: ${h.changedBy ?: "—"}"
+            val tvDetails = findViewById<TextView>(R.id.tvHistoryDetails)
+            if (h.details.isNullOrBlank()) {
+                tvDetails.visibility = View.GONE
+            } else {
+                tvDetails.visibility = View.VISIBLE
+                tvDetails.text = h.details
             }
         }
     }
