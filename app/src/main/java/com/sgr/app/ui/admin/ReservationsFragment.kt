@@ -153,23 +153,41 @@ class ReservationsFragment : Fragment() {
     }
 
     private fun showViewReservationDialog(r: Reservation) {
-        val resourceName = if (r.resourceType == "SPACE") r.spaceName else r.equipmentName
-        val resourceType = if (r.resourceType == "SPACE") "Espacio" else "Equipo"
-        val msg = """
-            Solicitante: ${r.requesterName ?: "—"} (${r.requesterEmail ?: "—"})
-            Tipo: $resourceType
-            Recurso: ${resourceName ?: "—"}
-            Fecha: ${r.reservationDate}
-            Horario: ${r.startTime} - ${r.endTime}
-            Estado: ${r.status}
-            Motivo: ${r.purpose}
-            Observaciones: ${r.observations ?: "—"}
-            Comentario admin: ${r.adminComment ?: "—"}
-        """.trimIndent()
-        AlertDialog.Builder(requireContext())
-            .setTitle("Detalle de reservación #${r.id}")
-            .setMessage(msg)
-            .setPositiveButton("Cerrar", null).show()
+        val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_reservation_detail, null)
+        val resourceName = if (r.resourceType == "SPACE") r.spaceName ?: "—" else r.equipmentName ?: "—"
+        val resourceTypeLabel = if (r.resourceType == "SPACE") "Espacio" else "Equipo"
+        val statusLabel = when (r.status) {
+            "PENDIENTE" -> "Pendiente"
+            "APROBADA" -> "Aprobada"
+            "RECHAZADA" -> "Rechazada"
+            "DEVUELTA" -> "Devuelta"
+            "CANCELADA" -> "Cancelada"
+            else -> r.status
+        }
+
+        view.findViewById<TextView>(R.id.tvDRequester).text = r.requesterName ?: "—"
+        view.findViewById<TextView>(R.id.tvDEmail).text = r.requesterEmail ?: "—"
+        view.findViewById<TextView>(R.id.tvDRequesterType).text = "—"
+        view.findViewById<TextView>(R.id.tvDResourceType).text = resourceTypeLabel
+        view.findViewById<TextView>(R.id.tvDResource).text = resourceName
+        view.findViewById<TextView>(R.id.tvDDate).text = r.reservationDate
+        view.findViewById<TextView>(R.id.tvDStartTime).text = r.startTime
+        view.findViewById<TextView>(R.id.tvDReturnDate).text = r.createdAt?.take(10) ?: "—"
+        view.findViewById<TextView>(R.id.tvDEndTime).text = r.endTime
+        view.findViewById<TextView>(R.id.tvDStatus).text = statusLabel
+        view.findViewById<TextView>(R.id.tvDPurpose).text = r.purpose
+        view.findViewById<TextView>(R.id.tvDObservations).text = r.observations ?: "—"
+        view.findViewById<TextView>(R.id.tvDAdminComment).text = r.adminComment ?: "—"
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(view)
+            .create()
+
+        view.findViewById<TextView>(R.id.btnDetailClose).setOnClickListener { dialog.dismiss() }
+        view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDetailDismiss)
+            .setOnClickListener { dialog.dismiss() }
+
+        dialog.show()
     }
 
     private fun setupSpinner(spinner: Spinner, labels: Array<String>, onSelect: (Int) -> Unit) {
@@ -314,50 +332,79 @@ class ReservationAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val r = items[position]
         holder.view.apply {
+            // Solicitante + recurso
             findViewById<TextView>(R.id.tvRequester).text = r.requesterName ?: r.requesterEmail ?: "—"
-            val resourceName = if (r.resourceType == "SPACE") r.spaceName else r.equipmentName
-            findViewById<TextView>(R.id.tvResource).text = "${r.resourceType}: ${resourceName ?: "—"}"
-            findViewById<TextView>(R.id.tvDate).text = "${r.reservationDate} | ${r.startTime} - ${r.endTime}"
+            val resourceName = if (r.resourceType == "SPACE") r.spaceName ?: "—" else r.equipmentName ?: "—"
+            findViewById<TextView>(R.id.tvResourceName).text = resourceName
+            findViewById<TextView>(R.id.tvDate).text = "${r.reservationDate}  ${r.startTime} – ${r.endTime}"
 
-            val tvStatus = findViewById<TextView>(R.id.tvStatus)
-            tvStatus.text = r.status
-            val color = when (r.status) {
-                "PENDIENTE" -> 0xFFF59E0B.toInt()
-                "APROBADA" -> 0xFF10B981.toInt()
-                "RECHAZADA" -> 0xFFEF4444.toInt()
-                "CANCELADA" -> 0xFF6B7280.toInt()
-                else -> 0xFF6B7280.toInt()
+            // Badge categoría
+            val tvCategory = findViewById<TextView>(R.id.tvCategory)
+            if (r.resourceType == "SPACE") {
+                tvCategory.text = "ESPACIO"
+                tvCategory.setBackgroundResource(R.drawable.bg_badge_purple)
+                tvCategory.setTextColor(0xFF5B21B6.toInt())
+            } else {
+                tvCategory.text = "EQUIPO"
+                tvCategory.setBackgroundResource(R.drawable.bg_badge_blue)
+                tvCategory.setTextColor(0xFF1D4ED8.toInt())
             }
-            tvStatus.setBackgroundColor(color)
 
-            val layoutActions = findViewById<LinearLayout>(R.id.layoutActions)
-            val btnApprove = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnApprove)
-            val btnReject = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnReject)
-            val btnReturn = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnReturn)
+            // Badge estatus
+            val tvStatus = findViewById<TextView>(R.id.tvStatus)
+            when (r.status) {
+                "PENDIENTE" -> {
+                    tvStatus.text = "Pendiente"
+                    tvStatus.setBackgroundResource(R.drawable.bg_badge_yellow)
+                    tvStatus.setTextColor(0xFF92400E.toInt())
+                }
+                "APROBADA" -> {
+                    tvStatus.text = "Aprobada"
+                    tvStatus.setBackgroundResource(R.drawable.bg_badge_green)
+                    tvStatus.setTextColor(0xFF065F46.toInt())
+                }
+                "RECHAZADA" -> {
+                    tvStatus.text = "Rechazada"
+                    tvStatus.setBackgroundResource(R.drawable.bg_badge_red)
+                    tvStatus.setTextColor(0xFF991B1B.toInt())
+                }
+                "DEVUELTA" -> {
+                    tvStatus.text = "Devuelta"
+                    tvStatus.setBackgroundResource(R.drawable.bg_badge_blue)
+                    tvStatus.setTextColor(0xFF1D4ED8.toInt())
+                }
+                else -> {
+                    tvStatus.text = "Cancelada"
+                    tvStatus.setBackgroundResource(R.drawable.bg_badge_gray)
+                    tvStatus.setTextColor(0xFF374151.toInt())
+                }
+            }
+
+            // Botones de acción
+            val btnApprove = findViewById<ImageButton>(R.id.btnApprove)
+            val btnReject = findViewById<ImageButton>(R.id.btnReject)
+            val btnReturn = findViewById<ImageButton>(R.id.btnReturn)
+
+            btnApprove.visibility = View.GONE
+            btnReject.visibility = View.GONE
+            btnReturn.visibility = View.GONE
 
             when (r.status) {
                 "PENDIENTE" -> {
-                    layoutActions.visibility = View.VISIBLE
-                    btnReturn.visibility = View.GONE
+                    btnApprove.visibility = View.VISIBLE
+                    btnReject.visibility = View.VISIBLE
                     btnApprove.setOnClickListener { onAction("approve", r) }
                     btnReject.setOnClickListener { onAction("reject", r) }
                 }
                 "APROBADA" -> {
-                    layoutActions.visibility = View.GONE
                     btnReturn.visibility = View.VISIBLE
                     btnReturn.setOnClickListener { onAction("return", r) }
                 }
-                else -> {
-                    layoutActions.visibility = View.GONE
-                    btnReturn.visibility = View.GONE
-                }
             }
 
-            findViewById<com.google.android.material.button.MaterialButton>(R.id.btnViewDetail)
-                .setOnClickListener { onAction("view", r) }
-            // Hide student-only buttons in admin view
-            findViewById<com.google.android.material.button.MaterialButton>(R.id.btnEditReservation).visibility = View.GONE
-            findViewById<com.google.android.material.button.MaterialButton>(R.id.btnViewRejection).visibility = View.GONE
+            findViewById<ImageButton>(R.id.btnViewDetail).setOnClickListener { onAction("view", r) }
+            findViewById<ImageButton>(R.id.btnEditReservation).visibility = View.GONE
+            findViewById<ImageButton>(R.id.btnViewRejection).visibility = View.GONE
         }
     }
 }

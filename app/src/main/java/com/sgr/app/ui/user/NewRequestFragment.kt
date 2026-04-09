@@ -199,7 +199,7 @@ class NewRequestFragment : Fragment() {
                 val resp = api.getEquipments(0, 50, "", "")
                 if (resp.isSuccessful) {
                     val all = resp.body()?.content ?: emptyList()
-                    val filtered = all.filter { it.active }
+                    val filtered = all.filter { it.active == true }
                     binding.rvSpaceEquipment.layoutManager = LinearLayoutManager(requireContext())
                     if (filtered.isEmpty()) {
                         binding.tvNoEquipment.visibility = View.VISIBLE

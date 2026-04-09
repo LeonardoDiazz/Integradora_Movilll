@@ -5,152 +5,247 @@
     android:orientation="vertical"
     android:padding="20dp">
 
-    <!-- Fila 1: ID | Estado -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="horizontal" android:layout_marginBottom="10dp">
+    <!-- Título -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="4dp">
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Detalle de Reserva"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                android:textColor="#111827"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Información registrada de la reserva"
+                android:textSize="12sp"
+                android:textColor="#6B7280"/>
+        </LinearLayout>
+        <TextView
+            android:id="@+id/btnDetailClose"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:text="✕"
+            android:textSize="16sp"
+            android:textColor="#6B7280"/>
+    </LinearLayout>
 
-        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent"
+    <!-- Separador -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E5E7EB"
+        android:layout_marginBottom="14dp"/>
+
+    <!-- Fila 1: Solicitante | Correo -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
             android:layout_weight="1" android:layout_marginEnd="6dp"
             android:orientation="vertical" android:padding="12dp"
             android:background="@drawable/bg_detail_card">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="ID" android:textSize="11sp" android:textColor="#6B7280"
-                android:layout_marginBottom="4dp"/>
-            <TextView android:id="@+id/tvDetailId"
+                android:text="SOLICITANTE" android:textSize="10sp"
+                android:textColor="#6B7280" android:textStyle="bold" android:layout_marginBottom="3dp"/>
+            <TextView android:id="@+id/tvDRequester"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="—" android:textSize="14sp" android:textStyle="bold"
-                android:textColor="#111827"/>
+                android:text="—" android:textSize="13sp" android:textStyle="bold" android:textColor="#111827"/>
         </LinearLayout>
-
-        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent"
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
             android:layout_weight="1" android:orientation="vertical" android:padding="12dp"
             android:background="@drawable/bg_detail_card">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="ESTADO" android:textSize="11sp" android:textColor="#6B7280"
-                android:layout_marginBottom="4dp"/>
-            <TextView android:id="@+id/tvDetailStatus"
+                android:text="CORREO" android:textSize="10sp"
+                android:textColor="#6B7280" android:textStyle="bold" android:layout_marginBottom="3dp"/>
+            <TextView android:id="@+id/tvDEmail"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="—" android:textSize="14sp" android:textStyle="bold"
-                android:textColor="#111827"/>
+                android:text="—" android:textSize="13sp" android:textStyle="bold" android:textColor="#111827"/>
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Fila 2: Recurso | Tipo -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="horizontal" android:layout_marginBottom="10dp">
-
-        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent"
+    <!-- Fila 2: Tipo solicitante | Tipo recurso -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
             android:layout_weight="1" android:layout_marginEnd="6dp"
             android:orientation="vertical" android:padding="12dp"
             android:background="@drawable/bg_detail_card">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="RECURSO" android:textSize="11sp" android:textColor="#6B7280"
-                android:layout_marginBottom="4dp"/>
-            <TextView android:id="@+id/tvDetailResource"
+                android:text="TIPO DE SOLICITANTE" android:textSize="10sp"
+                android:textColor="#6B7280" android:textStyle="bold" android:layout_marginBottom="3dp"/>
+            <TextView android:id="@+id/tvDRequesterType"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="—" android:textSize="14sp" android:textStyle="bold"
-                android:textColor="#111827"/>
+                android:text="—" android:textSize="13sp" android:textStyle="bold" android:textColor="#111827"/>
         </LinearLayout>
-
-        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent"
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
             android:layout_weight="1" android:orientation="vertical" android:padding="12dp"
             android:background="@drawable/bg_detail_card">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="TIPO" android:textSize="11sp" android:textColor="#6B7280"
-                android:layout_marginBottom="4dp"/>
-            <TextView android:id="@+id/tvDetailType"
+                android:text="TIPO DE RECURSO" android:textSize="10sp"
+                android:textColor="#6B7280" android:textStyle="bold" android:layout_marginBottom="3dp"/>
+            <TextView android:id="@+id/tvDResourceType"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="—" android:textSize="14sp" android:textStyle="bold"
-                android:textColor="#111827"/>
+                android:text="—" android:textSize="13sp" android:textStyle="bold" android:textColor="#111827"/>
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Fila 3: Fecha Inicio | Hora Inicio -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="horizontal" android:layout_marginBottom="10dp">
-
-        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent"
+    <!-- Fila 3: Recurso | Fecha inicio -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
             android:layout_weight="1" android:layout_marginEnd="6dp"
             android:orientation="vertical" android:padding="12dp"
             android:background="@drawable/bg_detail_card">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="FECHA INICIO" android:textSize="11sp" android:textColor="#6B7280"
-                android:layout_marginBottom="4dp"/>
-            <TextView android:id="@+id/tvDetailDate"
+                android:text="RECURSO" android:textSize="10sp"
+                android:textColor="#6B7280" android:textStyle="bold" android:layout_marginBottom="3dp"/>
+            <TextView android:id="@+id/tvDResource"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="—" android:textSize="14sp" android:textStyle="bold"
-                android:textColor="#111827"/>
+                android:text="—" android:textSize="13sp" android:textStyle="bold" android:textColor="#111827"/>
         </LinearLayout>
-
-        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent"
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
             android:layout_weight="1" android:orientation="vertical" android:padding="12dp"
             android:background="@drawable/bg_detail_card">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="HORA INICIO" android:textSize="11sp" android:textColor="#6B7280"
-                android:layout_marginBottom="4dp"/>
-            <TextView android:id="@+id/tvDetailStartTime"
+                android:text="FECHA INICIO" android:textSize="10sp"
+                android:textColor="#6B7280" android:textStyle="bold" android:layout_marginBottom="3dp"/>
+            <TextView android:id="@+id/tvDDate"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="—" android:textSize="14sp" android:textStyle="bold"
-                android:textColor="#111827"/>
+                android:text="—" android:textSize="13sp" android:textStyle="bold" android:textColor="#111827"/>
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Fila 4: Fecha Devolución | Hora Devolución -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="horizontal" android:layout_marginBottom="10dp">
-
-        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent"
+    <!-- Fila 4: Hora inicio | Fecha devolución -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
             android:layout_weight="1" android:layout_marginEnd="6dp"
             android:orientation="vertical" android:padding="12dp"
             android:background="@drawable/bg_detail_card">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="FECHA DEVOLUCIÓN" android:textSize="11sp" android:textColor="#6B7280"
-                android:layout_marginBottom="4dp"/>
-            <TextView android:id="@+id/tvDetailEndDate"
+                android:text="HORA INICIO" android:textSize="10sp"
+                android:textColor="#6B7280" android:textStyle="bold" android:layout_marginBottom="3dp"/>
+            <TextView android:id="@+id/tvDStartTime"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="—" android:textSize="14sp" android:textStyle="bold"
-                android:textColor="#111827"/>
+                android:text="—" android:textSize="13sp" android:textStyle="bold" android:textColor="#111827"/>
         </LinearLayout>
-
-        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent"
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
             android:layout_weight="1" android:orientation="vertical" android:padding="12dp"
             android:background="@drawable/bg_detail_card">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="HORA DEVOLUCIÓN" android:textSize="11sp" android:textColor="#6B7280"
-                android:layout_marginBottom="4dp"/>
-            <TextView android:id="@+id/tvDetailEndTime"
+                android:text="FECHA DEVOLUCIÓN" android:textSize="10sp"
+                android:textColor="#6B7280" android:textStyle="bold" android:layout_marginBottom="3dp"/>
+            <TextView android:id="@+id/tvDReturnDate"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="—" android:textSize="14sp" android:textStyle="bold"
-                android:textColor="#111827"/>
+                android:text="—" android:textSize="13sp" android:textStyle="bold" android:textColor="#111827"/>
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Propósito (ancho completo) -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="12dp"
+    <!-- Fila 5: Hora fin | Estado -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:layout_marginEnd="6dp"
+            android:orientation="vertical" android:padding="12dp"
+            android:background="@drawable/bg_detail_card">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="HORA FIN" android:textSize="10sp"
+                android:textColor="#6B7280" android:textStyle="bold" android:layout_marginBottom="3dp"/>
+            <TextView android:id="@+id/tvDEndTime"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="—" android:textSize="13sp" android:textStyle="bold" android:textColor="#111827"/>
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical" android:padding="12dp"
+            android:background="@drawable/bg_detail_card">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="ESTADO" android:textSize="10sp"
+                android:textColor="#6B7280" android:textStyle="bold" android:layout_marginBottom="3dp"/>
+            <TextView android:id="@+id/tvDStatus"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="—" android:textSize="13sp" android:textStyle="bold" android:textColor="#111827"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Fila 6: Motivo | Observaciones -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:layout_marginEnd="6dp"
+            android:orientation="vertical" android:padding="12dp"
+            android:background="@drawable/bg_detail_card">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="MOTIVO" android:textSize="10sp"
+                android:textColor="#6B7280" android:textStyle="bold" android:layout_marginBottom="3dp"/>
+            <TextView android:id="@+id/tvDPurpose"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="—" android:textSize="13sp" android:textStyle="bold" android:textColor="#111827"/>
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical" android:padding="12dp"
+            android:background="@drawable/bg_detail_card">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="OBSERVACIONES" android:textSize="10sp"
+                android:textColor="#6B7280" android:textStyle="bold" android:layout_marginBottom="3dp"/>
+            <TextView android:id="@+id/tvDObservations"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="—" android:textSize="13sp" android:textStyle="bold" android:textColor="#111827"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Fila 7: Comentario admin (ancho completo) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:layout_marginBottom="14dp"
         android:background="@drawable/bg_detail_card">
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="PROPÓSITO" android:textSize="11sp" android:textColor="#6B7280"
-            android:layout_marginBottom="4dp"/>
-        <TextView android:id="@+id/tvDetailPurpose"
+            android:text="COMENTARIO ADMINISTRATIVO" android:textSize="10sp"
+            android:textColor="#6B7280" android:textStyle="bold" android:layout_marginBottom="3dp"/>
+        <TextView android:id="@+id/tvDAdminComment"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="—" android:textSize="14sp" android:textStyle="bold"
-            android:textColor="#111827"/>
+            android:text="—" android:textSize="13sp" android:textStyle="bold" android:textColor="#111827"/>
     </LinearLayout>
 
-    <!-- Comentario admin (visible solo si existe) -->
-    <LinearLayout android:id="@+id/layoutAdminComment"
-        android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="12dp"
-        android:layout_marginTop="10dp"
-        android:background="@drawable/bg_badge_red"
-        android:visibility="gone">
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="COMENTARIO ADMIN" android:textSize="11sp" android:textColor="#991B1B"
-            android:layout_marginBottom="4dp"/>
-        <TextView android:id="@+id/tvDetailAdminComment"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="—" android:textSize="13sp" android:textColor="#7F1D1D"/>
-    </LinearLayout>
+    <!-- Botón cerrar -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDetailDismiss"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:text="Cerrar"
+        android:textSize="13sp"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
 </LinearLayout>

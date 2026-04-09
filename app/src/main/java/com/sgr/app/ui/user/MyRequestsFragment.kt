@@ -122,30 +122,28 @@ class MyRequestsFragment : Fragment() {
             val resourceName = if (r.resourceType == "SPACE") r.spaceName else r.equipmentName
             val resourceType = if (r.resourceType == "SPACE") "Espacio" else "Equipo"
 
-            view.findViewById<TextView>(R.id.tvDetailId).text = "#${r.id}"
-            view.findViewById<TextView>(R.id.tvDetailStatus).text = statusLabel(r.status ?: "")
-            view.findViewById<TextView>(R.id.tvDetailResource).text = resourceName ?: "—"
-            view.findViewById<TextView>(R.id.tvDetailType).text = resourceType
-            view.findViewById<TextView>(R.id.tvDetailDate).text = r.reservationDate ?: "—"
-            view.findViewById<TextView>(R.id.tvDetailStartTime).text = r.startTime ?: "—"
-            view.findViewById<TextView>(R.id.tvDetailEndDate).text = r.reservationDate ?: "—"
-            view.findViewById<TextView>(R.id.tvDetailEndTime).text = r.endTime ?: "—"
-            view.findViewById<TextView>(R.id.tvDetailPurpose).text = r.purpose?.ifBlank { "—" } ?: "—"
+            view.findViewById<TextView>(R.id.tvDRequester).text = r.requesterName ?: "—"
+            view.findViewById<TextView>(R.id.tvDEmail).text = r.requesterEmail ?: "—"
+            view.findViewById<TextView>(R.id.tvDRequesterType).text = "#${r.id}"
+            view.findViewById<TextView>(R.id.tvDResourceType).text = resourceType
+            view.findViewById<TextView>(R.id.tvDResource).text = resourceName ?: "—"
+            view.findViewById<TextView>(R.id.tvDDate).text = r.reservationDate ?: "—"
+            view.findViewById<TextView>(R.id.tvDStartTime).text = r.startTime ?: "—"
+            view.findViewById<TextView>(R.id.tvDReturnDate).text = r.reservationDate ?: "—"
+            view.findViewById<TextView>(R.id.tvDEndTime).text = r.endTime ?: "—"
+            view.findViewById<TextView>(R.id.tvDStatus).text = statusLabel(r.status ?: "")
+            view.findViewById<TextView>(R.id.tvDPurpose).text = r.purpose?.ifBlank { "—" } ?: "—"
+            view.findViewById<TextView>(R.id.tvDObservations).text = r.observations?.ifBlank { "—" } ?: "—"
+            view.findViewById<TextView>(R.id.tvDAdminComment).text = r.adminComment?.ifBlank { "—" } ?: "—"
 
-            val adminComment = r.adminComment?.takeIf { it.isNotBlank() }
-            val layoutAdmin = view.findViewById<View>(R.id.layoutAdminComment)
-            if (adminComment != null) {
-                layoutAdmin.visibility = View.VISIBLE
-                view.findViewById<TextView>(R.id.tvDetailAdminComment).text = adminComment
-            } else {
-                layoutAdmin.visibility = View.GONE
-            }
-
-            AlertDialog.Builder(requireContext())
-                .setTitle("Detalles de la Solicitud")
+            val dialog = AlertDialog.Builder(requireContext())
                 .setView(view)
-                .setPositiveButton("Cerrar", null)
-                .show()
+                .create()
+
+            view.findViewById<View>(R.id.btnDetailDismiss).setOnClickListener { dialog.dismiss() }
+            view.findViewById<View>(R.id.btnDetailClose).setOnClickListener { dialog.dismiss() }
+
+            dialog.show()
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "Error al mostrar detalle", Toast.LENGTH_SHORT).show()
         }

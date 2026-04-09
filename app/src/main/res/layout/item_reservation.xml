@@ -3,32 +3,49 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="4dp"
+    android:layout_marginHorizontal="8dp"
     android:layout_marginVertical="4dp"
     app:cardCornerRadius="12dp"
-    app:cardElevation="3dp">
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="14dp">
 
+        <!-- Fila 1: Solicitante + estatus de solicitud -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="8dp">
+            android:gravity="center_vertical"
+            android:layout_marginBottom="6dp">
 
-            <TextView
-                android:id="@+id/tvRequester"
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Solicitante"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp"
-                android:textStyle="bold"/>
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvRequester"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Solicitante"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#111827"/>
+
+                <TextView
+                    android:id="@+id/tvResourceName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="—"
+                    android:textSize="12sp"
+                    android:textColor="#6B7280"/>
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/tvStatus"
@@ -39,96 +56,125 @@
                 android:text="PENDIENTE"
                 android:textSize="11sp"
                 android:textStyle="bold"
-                android:background="@drawable/bg_status_pending"
-                android:textColor="@color/white"/>
+                android:background="@drawable/bg_badge_yellow"
+                android:textColor="#92400E"/>
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/tvResource"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Recurso"
-            android:textColor="@color/gray_text"
-            android:textSize="13sp"
-            android:layout_marginBottom="4dp"/>
-
-        <TextView
-            android:id="@+id/tvDate"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Fecha"
-            android:textColor="@color/gray_text"
-            android:textSize="13sp"
-            android:layout_marginBottom="12dp"/>
-
+        <!-- Fila 2: Categoría + fecha -->
         <LinearLayout
-            android:id="@+id/layoutActions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:visibility="gone">
+            android:gravity="center_vertical"
+            android:layout_marginBottom="10dp">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnApprove"
-                android:layout_width="0dp"
-                android:layout_height="36dp"
-                android:layout_weight="1"
-                android:layout_marginEnd="4dp"
-                android:text="Aprobar"
-                android:textSize="12sp"
-                android:backgroundTint="@color/status_approved"/>
+            <TextView
+                android:id="@+id/tvCategory"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="3dp"
+                android:text="ESPACIO"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:background="@drawable/bg_badge_purple"
+                android:textColor="#5B21B6"
+                android:layout_marginEnd="8dp"/>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnReject"
+            <TextView
+                android:id="@+id/tvDate"
                 android:layout_width="0dp"
-                android:layout_height="36dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:text="Rechazar"
-                android:textSize="12sp"
-                android:backgroundTint="@color/status_rejected"/>
+                android:text="Fecha"
+                android:textColor="#6B7280"
+                android:textSize="12sp"/>
         </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnReturn"
+        <!-- Separador -->
+        <View
             android:layout_width="match_parent"
-            android:layout_height="36dp"
-            android:text="Registrar devolución"
-            android:textSize="12sp"
-            android:visibility="gone"
-            android:backgroundTint="@color/blue_dark"/>
+            android:layout_height="1dp"
+            android:background="#F3F4F6"
+            android:layout_marginBottom="10dp"/>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnViewDetail"
+        <!-- Botones de acción -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="32dp"
-            android:layout_marginTop="6dp"
-            android:text="Ver detalle"
-            android:textSize="11sp"
-            android:backgroundTint="#1D4ED8"
-            style="@style/Widget.MaterialComponents.Button"/>
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnEditReservation"
-            android:layout_width="match_parent"
-            android:layout_height="32dp"
-            android:layout_marginTop="4dp"
-            android:text="Editar solicitud"
-            android:textSize="11sp"
-            android:backgroundTint="#D97706"
-            android:visibility="gone"
-            style="@style/Widget.MaterialComponents.Button"/>
+            <!-- Ver detalle -->
+            <ImageButton
+                android:id="@+id/btnViewDetail"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_icon_btn"
+                android:src="@drawable/ic_eye"
+                android:padding="7dp"
+                android:contentDescription="Ver detalle"/>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnViewRejection"
-            android:layout_width="match_parent"
-            android:layout_height="32dp"
-            android:layout_marginTop="4dp"
-            android:text="Ver motivo de rechazo"
-            android:textSize="11sp"
-            android:backgroundTint="#DC2626"
-            android:visibility="gone"
-            style="@style/Widget.MaterialComponents.Button"/>
+            <!-- Aprobar (solo PENDIENTE) -->
+            <ImageButton
+                android:id="@+id/btnApprove"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_icon_btn_green"
+                android:src="@drawable/ic_check"
+                android:padding="7dp"
+                android:visibility="gone"
+                android:contentDescription="Aprobar"/>
 
+            <!-- Rechazar (solo PENDIENTE) -->
+            <ImageButton
+                android:id="@+id/btnReject"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_icon_btn_red"
+                android:src="@drawable/ic_close"
+                android:padding="7dp"
+                android:visibility="gone"
+                android:contentDescription="Rechazar"/>
+
+            <!-- Registrar devolución (solo APROBADA) -->
+            <ImageButton
+                android:id="@+id/btnReturn"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_icon_btn_purple"
+                android:src="@drawable/ic_return"
+                android:padding="7dp"
+                android:visibility="gone"
+                android:contentDescription="Registrar devolución"/>
+
+            <!-- Editar (usuario) -->
+            <ImageButton
+                android:id="@+id/btnEditReservation"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_icon_btn_orange"
+                android:src="@drawable/ic_edit"
+                android:padding="7dp"
+                android:visibility="gone"
+                android:contentDescription="Editar"/>
+
+            <!-- Ver motivo rechazo (usuario) -->
+            <ImageButton
+                android:id="@+id/btnViewRejection"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_icon_btn_gray"
+                android:src="@drawable/ic_warning"
+                android:padding="7dp"
+                android:visibility="gone"
+                android:contentDescription="Ver rechazo"/>
+
+        </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

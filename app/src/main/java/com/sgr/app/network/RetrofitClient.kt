@@ -10,10 +10,34 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    // Para emulador usa 10.0.2.2, para dispositivo físico pon la IP de tu PC
-    private const val BASE_URL = "http://192.168.0.52:8080/"
+    // URL cacheada en memoria durante la sesión
+    @Volatile private var cachedBaseUrl: String? = null
 
-    fun create(context: Context): ApiService {
+    /**
+     * Crea el cliente de API.
+     * La primera vez descubre el backend en la red local y cachea la URL.
+     * Las siguientes llamadas usan la URL cacheada (rápido).
+     */
+    suspend fun create(context: Context): ApiService {
+        val baseUrl = cachedBaseUrl ?: NetworkDiscovery.resolveBaseUrl(context).also {
+            cachedBaseUrl = it
+        }
+        return buildClient(context, baseUrl)
+    }
+
+    /**
+     * Fuerza redescubrimiento completo (útil si el backend cambió de IP).
+     */
+    suspend fun createWithRediscovery(context: Context): ApiService {
+        cachedBaseUrl = null
+        NetworkDiscovery.clearCache(context)
+        val baseUrl = NetworkDiscovery.resolveBaseUrl(context).also {
+            cachedBaseUrl = it
+        }
+        return buildClient(context, baseUrl)
+    }
+
+    private fun buildClient(context: Context, baseUrl: String): ApiService {
         val session = SessionManager(context)
 
         val logging = HttpLoggingInterceptor().apply {
@@ -38,7 +62,7 @@ object RetrofitClient {
             .build()
 
         return Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(baseUrl)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
