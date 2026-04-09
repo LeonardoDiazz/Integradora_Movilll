@@ -268,26 +268,46 @@ class UserAdapter(
     inner class VH(val view: View) : RecyclerView.ViewHolder(view)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
-        VH(LayoutInflater.from(parent.context).inflate(R.layout.item_generic, parent, false))
+        VH(LayoutInflater.from(parent.context).inflate(R.layout.item_user, parent, false))
 
     override fun getItemCount() = items.size
 
     override fun onBindViewHolder(holder: VH, position: Int) {
         val u = items[position]
         holder.view.apply {
-            val rolEs = if (u.role == "ADMIN") "Administrador" else "Usuario solicitante"
-            findViewById<TextView>(R.id.tvTitle).text = "${u.name} ${u.lastName}"
-            findViewById<TextView>(R.id.tvSubtitle).text = u.email
-            findViewById<TextView>(R.id.tvDetail).text = "Rol: $rolEs | ID: ${u.identifier ?: "—"}"
+            // Avatar con inicial
+            val initial = u.name.firstOrNull()?.uppercase() ?: "?"
+            findViewById<TextView>(R.id.tvAvatar).text = initial
 
-            val badge = findViewById<TextView>(R.id.tvBadge)
-            badge.text = if (u.active) "ACTIVO" else "INACTIVO"
-            badge.setBackgroundColor(if (u.active) 0xFF10B981.toInt() else 0xFFEF4444.toInt())
+            // Nombre y matrícula
+            findViewById<TextView>(R.id.tvName).text = "${u.name} ${u.lastName}"
+            findViewById<TextView>(R.id.tvIdentifier).text = "Matrícula: ${u.identifier ?: "—"}"
 
+            // Correo
+            findViewById<TextView>(R.id.tvEmail).text = u.email
+
+            // Estado badge
+            val tvStatus = findViewById<TextView>(R.id.tvStatus)
+            tvStatus.text = if (u.active) "Activo" else "Inactivo"
+            tvStatus.setBackgroundColor(if (u.active) 0xFF10B981.toInt() else 0xFFEF4444.toInt())
+
+            // Rol badge
+            val isAdmin = u.role == "ADMIN"
+            val tvRole = findViewById<TextView>(R.id.tvRole)
+            tvRole.text = if (isAdmin) "Administrador" else "Usuario solicitante"
+            tvRole.setBackgroundColor(if (isAdmin) 0xFF7C3AED.toInt() else 0xFF2563EB.toInt())
+
+            // Tipo
+            val tipoLabel = when (u.userType) {
+                "ESTUDIANTE" -> "Estudiante"
+                "STAFF" -> "Personal"
+                else -> "—"
+            }
+            findViewById<TextView>(R.id.tvUserType).text = tipoLabel
+
+            // Botones
             findViewById<com.google.android.material.button.MaterialButton>(R.id.btnView).setOnClickListener { onView(u) }
             findViewById<com.google.android.material.button.MaterialButton>(R.id.btnEdit).setOnClickListener { onEdit(u) }
-            // Hide history for users
-            findViewById<com.google.android.material.button.MaterialButton>(R.id.btnHistory).visibility = View.GONE
 
             val btnToggle = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnToggle)
             btnToggle.text = if (u.active) "Desactivar" else "Activar"
