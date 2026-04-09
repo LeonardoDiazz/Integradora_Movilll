@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.sgr.app.R
 import com.sgr.app.databinding.FragmentSpacesBinding
 import com.sgr.app.model.CreateSpaceRequest
-import com.sgr.app.model.HistoryItem
+import com.sgr.app.model.Reservation
 import com.sgr.app.model.Space
 import com.sgr.app.network.RetrofitClient
 import kotlinx.coroutines.launch
@@ -49,31 +49,13 @@ class SpacesFragment : Fragment() {
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
         setupSpinner(binding.spinnerDisponibilidad, disponibilidadLabels) { pos ->
-            if (!isInitializing) {
-                filterDisponibilidad = disponibilidadValues[pos]
-                filterAcceso = ""
-                filterCapacidad = ""
-                currentPage = 0
-                load()
-            }
+            if (!isInitializing) { filterDisponibilidad = disponibilidadValues[pos]; filterAcceso = ""; filterCapacidad = ""; currentPage = 0; load() }
         }
         setupSpinner(binding.spinnerAcceso, accesoLabels) { pos ->
-            if (!isInitializing) {
-                filterAcceso = accesoValues[pos]
-                filterDisponibilidad = ""
-                filterCapacidad = ""
-                currentPage = 0
-                load()
-            }
+            if (!isInitializing) { filterAcceso = accesoValues[pos]; filterDisponibilidad = ""; filterCapacidad = ""; currentPage = 0; load() }
         }
         setupSpinner(binding.spinnerCapacidad, capacidadLabels) { pos ->
-            if (!isInitializing) {
-                filterCapacidad = capacidadValues[pos]
-                filterDisponibilidad = ""
-                filterAcceso = ""
-                currentPage = 0
-                load()
-            }
+            if (!isInitializing) { filterCapacidad = capacidadValues[pos]; filterDisponibilidad = ""; filterAcceso = ""; currentPage = 0; load() }
         }
 
         isInitializing = false
@@ -90,7 +72,6 @@ class SpacesFragment : Fragment() {
         }
 
         binding.btnAddSpace.setOnClickListener { showCreateSpaceDialog() }
-
         binding.btnPrev.setOnClickListener { if (currentPage > 0) { currentPage--; load() } }
         binding.btnNext.setOnClickListener { if (currentPage < totalPages - 1) { currentPage++; load() } }
 
@@ -144,7 +125,6 @@ class SpacesFragment : Fragment() {
     private fun buildSpaceForm(space: Space? = null): Pair<ScrollView, () -> CreateSpaceRequest?> {
         val ctx = requireContext()
         val layout = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(48, 16, 48, 0) }
-
         fun label(text: String) = TextView(ctx).apply { this.text = text; textSize = 12f; setPadding(0, 12, 0, 2) }
 
         val etName = EditText(ctx).apply { hint = "Nombre del espacio"; setText(space?.name ?: "") }
@@ -156,8 +136,7 @@ class SpacesFragment : Fragment() {
         val availValues = arrayOf("DISPONIBLE", "OCUPADO", "MANTENIMIENTO")
         val spinnerAvail = Spinner(ctx).apply {
             adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, availValues)
-            val idx = availValues.indexOf(space?.availability ?: "DISPONIBLE").coerceAtLeast(0)
-            setSelection(idx)
+            setSelection(availValues.indexOf(space?.availability ?: "DISPONIBLE").coerceAtLeast(0))
         }
         val cbStudents = CheckBox(ctx).apply { text = "Permite estudiantes"; isChecked = space?.allowStudents ?: true }
         val cbActive = CheckBox(ctx).apply { text = "Activo"; isChecked = space?.active ?: true }
@@ -171,79 +150,58 @@ class SpacesFragment : Fragment() {
         layout.addView(cbStudents); layout.addView(cbActive)
 
         val sv = ScrollView(ctx).apply { addView(layout) }
-
         val builder: () -> CreateSpaceRequest? = {
             val name = etName.text.toString().trim()
             if (name.isEmpty()) { Toast.makeText(ctx, "El nombre es requerido", Toast.LENGTH_SHORT).show(); null }
-            else CreateSpaceRequest(
-                name = name,
-                category = etCategory.text.toString().trim(),
-                location = etLocation.text.toString().trim(),
-                capacity = etCapacity.text.toString().toIntOrNull() ?: 0,
-                description = etDescription.text.toString().trim(),
-                allowStudents = cbStudents.isChecked,
-                availability = availValues[spinnerAvail.selectedItemPosition],
-                active = cbActive.isChecked
-            )
+            else CreateSpaceRequest(name, etCategory.text.toString().trim(), etLocation.text.toString().trim(),
+                etCapacity.text.toString().toIntOrNull() ?: 0, etDescription.text.toString().trim(),
+                cbStudents.isChecked, availValues[spinnerAvail.selectedItemPosition], cbActive.isChecked)
         }
         return Pair(sv, builder)
     }
 
     private fun showCreateSpaceDialog() {
         val (view, buildRequest) = buildSpaceForm()
-        AlertDialog.Builder(requireContext())
-            .setTitle("Crear espacio")
-            .setView(view)
+        AlertDialog.Builder(requireContext()).setTitle("Crear espacio").setView(view)
             .setPositiveButton("Crear") { _, _ ->
                 val req = buildRequest() ?: return@setPositiveButton
                 lifecycleScope.launch {
                     try {
                         val resp = RetrofitClient.create(requireContext()).createSpace(req)
-                        if (resp.isSuccessful) {
-                            Toast.makeText(requireContext(), "Espacio creado", Toast.LENGTH_SHORT).show(); load()
-                        } else Toast.makeText(requireContext(), "Error: ${resp.code()}", Toast.LENGTH_SHORT).show()
+                        if (resp.isSuccessful) { Toast.makeText(requireContext(), "Espacio creado", Toast.LENGTH_SHORT).show(); load() }
+                        else Toast.makeText(requireContext(), "Error al crear", Toast.LENGTH_SHORT).show()
                     } catch (_: Exception) { Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show() }
                 }
-            }
-            .setNegativeButton("Cancelar", null).show()
+            }.setNegativeButton("Cancelar", null).show()
     }
 
     private fun showEditSpaceDialog(space: Space) {
         val (view, buildRequest) = buildSpaceForm(space)
-        AlertDialog.Builder(requireContext())
-            .setTitle("Editar espacio")
-            .setView(view)
+        AlertDialog.Builder(requireContext()).setTitle("Editar espacio").setView(view)
             .setPositiveButton("Guardar") { _, _ ->
                 val req = buildRequest() ?: return@setPositiveButton
                 lifecycleScope.launch {
                     try {
                         val resp = RetrofitClient.create(requireContext()).updateSpace(space.id, req)
-                        if (resp.isSuccessful) {
-                            Toast.makeText(requireContext(), "Espacio actualizado", Toast.LENGTH_SHORT).show(); load()
-                        } else Toast.makeText(requireContext(), "Error: ${resp.code()}", Toast.LENGTH_SHORT).show()
+                        if (resp.isSuccessful) { Toast.makeText(requireContext(), "Espacio actualizado", Toast.LENGTH_SHORT).show(); load() }
+                        else Toast.makeText(requireContext(), "Error al actualizar", Toast.LENGTH_SHORT).show()
                     } catch (_: Exception) { Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show() }
                 }
-            }
-            .setNegativeButton("Cancelar", null).show()
+            }.setNegativeButton("Cancelar", null).show()
     }
 
     private fun showViewSpaceDialog(space: Space) {
-        val allowStudents = if (space.allowStudents) "Sí" else "No"
-        val active = if (space.active) "Activo" else "Inactivo"
         val msg = """
             Nombre: ${space.name}
             Categoría: ${space.category}
             Ubicación: ${space.location}
             Capacidad: ${space.capacity}
             Disponibilidad: ${space.availability}
-            Permite estudiantes: $allowStudents
-            Estado: $active
+            Permite estudiantes: ${if (space.allowStudents) "Sí" else "No"}
+            Estado: ${if (space.active) "Activo" else "Inactivo"}
             Descripción: ${space.description}
         """.trimIndent()
-        AlertDialog.Builder(requireContext())
-            .setTitle("Detalle del espacio")
-            .setMessage(msg)
-            .setPositiveButton("Cerrar", null).show()
+        AlertDialog.Builder(requireContext()).setTitle("Detalle del espacio").setMessage(msg).setPositiveButton("Cerrar", null).show()
     }
 
     private fun showSpaceHistory(space: Space) {
@@ -251,24 +209,21 @@ class SpacesFragment : Fragment() {
             try {
                 val resp = RetrofitClient.create(requireContext()).getSpaceHistory(space.id)
                 if (resp.isSuccessful) {
-                    val items = resp.body() ?: emptyList()
-                    showHistoryDialog("Historial: ${space.name}", items)
+                    showHistoryDialog("Historial: ${space.name}", resp.body() ?: emptyList())
                 } else Toast.makeText(requireContext(), "Error al cargar historial", Toast.LENGTH_SHORT).show()
             } catch (_: Exception) { Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show() }
         }
     }
 
-    private fun showHistoryDialog(title: String, items: List<HistoryItem>) {
+    private fun showHistoryDialog(title: String, items: List<Reservation>) {
         if (items.isEmpty()) {
             AlertDialog.Builder(requireContext()).setTitle(title).setMessage("Sin historial registrado.").setPositiveButton("Cerrar", null).show()
             return
         }
-        val msg = items.joinToString("\n\n") { h ->
-            "• ${h.action ?: "Acción"}\n  Por: ${h.changedBy ?: "—"}\n  ${h.changedAt ?: ""}\n  ${h.details ?: ""}"
+        val msg = items.joinToString("\n\n") { r ->
+            "• ${r.requesterName ?: "—"}\n  Fecha: ${r.reservationDate}\n  Horario: ${r.schedule ?: ""}\n  Estado: ${r.status}"
         }
-        val tv = TextView(requireContext()).apply {
-            text = msg; setPadding(48, 24, 48, 0); textSize = 13f
-        }
+        val tv = TextView(requireContext()).apply { text = msg; setPadding(48, 24, 48, 0); textSize = 13f }
         val sv = ScrollView(requireContext()).apply { addView(tv) }
         AlertDialog.Builder(requireContext()).setTitle(title).setView(sv).setPositiveButton("Cerrar", null).show()
     }
@@ -299,11 +254,7 @@ class SpaceAdapter(
             findViewById<TextView>(R.id.tvDetail).text = "Cap: ${s.capacity} | ${if (s.allowStudents) "Estudiantes permitidos" else "Sin acceso estudiantes"}"
             val badge = findViewById<TextView>(R.id.tvBadge)
             badge.text = s.availability
-            badge.setBackgroundColor(when (s.availability) {
-                "DISPONIBLE" -> 0xFF10B981.toInt()
-                "OCUPADO" -> 0xFFEF4444.toInt()
-                else -> 0xFFF59E0B.toInt()
-            })
+            badge.setBackgroundColor(when (s.availability) { "DISPONIBLE" -> 0xFF10B981.toInt(); "OCUPADO" -> 0xFFEF4444.toInt(); else -> 0xFFF59E0B.toInt() })
             findViewById<com.google.android.material.button.MaterialButton>(R.id.btnView).setOnClickListener { onView(s) }
             findViewById<com.google.android.material.button.MaterialButton>(R.id.btnEdit).setOnClickListener { onEdit(s) }
             val btnHistory = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnHistory)

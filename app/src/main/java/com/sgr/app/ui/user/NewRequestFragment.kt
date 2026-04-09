@@ -34,9 +34,6 @@ class NewRequestFragment : Fragment() {
     private var totalPages = 1
     private var selectedResource: ResourceItem? = null
 
-    private var spaces = listOf<Space>()
-    private var equipments = listOf<Equipment>()
-
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentNewRequestBinding.inflate(inflater, container, false)
         return binding.root
@@ -47,37 +44,26 @@ class NewRequestFragment : Fragment() {
         requireActivity().title = ""
 
         val session = SessionManager(requireContext())
-        val isStudent = session.userRole == "STUDENT" || session.userRole == "STUDENTS"
+        val isStudent = session.userRole == "STUDENT"
 
         if (isStudent) binding.tvStudentNotice.visibility = View.VISIBLE
 
         binding.recyclerResources.layoutManager = LinearLayoutManager(requireContext())
 
-        // Tabs
         binding.btnTabSpace.setOnClickListener { if (currentTab != "SPACE") switchTab("SPACE") }
         binding.btnTabEquipment.setOnClickListener { if (currentTab != "EQUIPMENT") switchTab("EQUIPMENT") }
 
-        // Search
         binding.etSearch.addTextChangedListener(object : android.text.TextWatcher {
             override fun afterTextChanged(s: android.text.Editable?) { currentPage = 0; loadResources() }
             override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) {}
             override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {}
         })
 
-        // Pagination
         binding.btnPrev.setOnClickListener { if (currentPage > 0) { currentPage--; loadResources() } }
         binding.btnNext.setOnClickListener { if (currentPage < totalPages - 1) { currentPage++; loadResources() } }
-
-        // Continue
         binding.btnContinue.setOnClickListener { goToStep2() }
-
-        // Back
         binding.btnBack.setOnClickListener { goToStep1() }
-
-        // Change resource
         binding.btnChange.setOnClickListener { goToStep1() }
-
-        // Submit
         binding.btnSubmit.setOnClickListener { submit() }
 
         loadResources()
@@ -106,14 +92,13 @@ class NewRequestFragment : Fragment() {
             binding.etSearch.setText("")
             binding.etSearch.hint = "Buscar equipo..."
         }
-
         loadResources()
     }
 
     private fun loadResources() {
         val search = binding.etSearch.text?.toString()?.trim() ?: ""
         val session = SessionManager(requireContext())
-        val isStudent = session.userRole == "STUDENT" || session.userRole == "STUDENTS"
+        val isStudent = session.userRole == "STUDENT"
 
         lifecycleScope.launch {
             try {
@@ -125,22 +110,16 @@ class NewRequestFragment : Fragment() {
                     if (resp.isSuccessful) {
                         val page = resp.body() ?: return@launch
                         totalPages = page.totalPages.coerceAtLeast(1)
-                        spaces = page.content
-                        val filtered = page.content
-                            .filter { it.active && it.availability == "DISPONIBLE" }
-                            .filter { !isStudent || it.allowStudents }
-                        items = filtered.map { ResourceItem(it.id, it.name, "SPACE", "📍 ${it.location} • 👥 ${it.capacity}", "🏢") }
+                        val filtered = page.content.filter { it.active }.filter { !isStudent || it.allowStudents }
+                        items = filtered.map { ResourceItem(it.id, it.name, "SPACE", "${it.location} | Cap: ${it.capacity}", "🏢") }
                     } else return@launch
                 } else {
                     val resp = api.getEquipments(currentPage, 10, "", search)
                     if (resp.isSuccessful) {
                         val page = resp.body() ?: return@launch
                         totalPages = page.totalPages.coerceAtLeast(1)
-                        equipments = page.content
-                        val filtered = page.content
-                            .filter { it.active && it.equipmentCondition == "DISPONIBLE" }
-                            .filter { !isStudent || it.allowStudents }
-                        items = filtered.map { ResourceItem(it.id, it.name, "EQUIPMENT", "${it.category} • ${it.inventoryNumber}", "📦") }
+                        val filtered = page.content.filter { it.active && it.condition == "DISPONIBLE" }.filter { !isStudent || it.allowStudents }
+                        items = filtered.map { ResourceItem(it.id, it.name, "EQUIPMENT", "${it.category} | ${it.inventoryNumber}", "📦") }
                     } else return@launch
                 }
 
@@ -180,18 +159,19 @@ class NewRequestFragment : Fragment() {
     }
 
     private fun submit() {
-        val date = binding.etDate.text?.toString()?.trim() ?: ""
+        val startDate = binding.etDate.text?.toString()?.trim() ?: ""
         val startTime = binding.etStartTime.text?.toString()?.trim() ?: ""
+        val endDate = binding.etEndDate.text?.toString()?.trim() ?: ""
         val endTime = binding.etEndTime.text?.toString()?.trim() ?: ""
         val purpose = binding.etPurpose.text?.toString()?.trim() ?: ""
         val res = selectedResource ?: return
 
-        if (date.isEmpty() || startTime.isEmpty() || endTime.isEmpty() || purpose.isEmpty()) {
-            Toast.makeText(requireContext(), "Completa todos los campos", Toast.LENGTH_SHORT).show()
+        if (startDate.isEmpty() || startTime.isEmpty() || endTime.isEmpty() || purpose.isEmpty()) {
+            Toast.makeText(requireContext(), "Completa todos los campos obligatorios", Toast.LENGTH_SHORT).show()
             return
         }
         if (purpose.length < 10) {
-            Toast.makeText(requireContext(), "El propósito debe tener al menos 10 caracteres", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "El motivo debe tener al menos 10 caracteres", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -205,22 +185,22 @@ class NewRequestFragment : Fragment() {
                     CreateReservationRequest(
                         requesterId = session.userId,
                         resourceType = res.resourceType,
-                        spaceId = if (res.resourceType == "SPACE") res.id else null,
-                        equipmentId = if (res.resourceType == "EQUIPMENT") res.id else null,
-                        reservationDate = date,
+                        resourceId = res.id,
+                        reservationDate = startDate,
                         startTime = startTime,
+                        endDate = endDate.ifBlank { startDate },
                         endTime = endTime,
                         purpose = purpose,
                         observations = null
                     )
                 )
                 if (response.isSuccessful) {
-                    Toast.makeText(requireContext(), "¡Solicitud enviada exitosamente!", Toast.LENGTH_LONG).show()
-                    // Reset form
+                    Toast.makeText(requireContext(), "Solicitud enviada exitosamente", Toast.LENGTH_LONG).show()
                     selectedResource = null
                     binding.btnContinue.isEnabled = false
                     binding.etDate.text?.clear()
                     binding.etStartTime.text?.clear()
+                    binding.etEndDate.text?.clear()
                     binding.etEndTime.text?.clear()
                     binding.etPurpose.text?.clear()
                     goToStep1()
@@ -230,9 +210,7 @@ class NewRequestFragment : Fragment() {
                 }
             } catch (_: Exception) {
                 Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show()
-            } finally {
-                binding.btnSubmit.isEnabled = true
-            }
+            } finally { binding.btnSubmit.isEnabled = true }
         }
     }
 

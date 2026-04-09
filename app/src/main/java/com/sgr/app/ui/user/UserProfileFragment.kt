@@ -64,8 +64,7 @@ class UserProfileFragment : Fragment() {
                 try {
                     val response = RetrofitClient.create(requireContext()).updateProfile(
                         session.userId,
-                        UpdateProfileRequest(session.userName ?: "", session.userLastName ?: "", phone.ifBlank { null })
-                    )
+                        UpdateProfileRequest(phone.ifBlank { null })                    )
                     if (response.isSuccessful) {
                         binding.tvPhoneValue.text = phone.ifBlank { "Sin teléfono registrado" }
                         binding.layoutEditPhone.visibility = View.GONE

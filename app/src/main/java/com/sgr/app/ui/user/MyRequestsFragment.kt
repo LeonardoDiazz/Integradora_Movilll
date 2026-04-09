@@ -121,56 +121,65 @@ class MyRequestsFragment : Fragment() {
     }
 
     private fun showViewReservationDialog(r: Reservation) {
-        val resourceName = if (r.resourceType == "SPACE") r.spaceName else r.equipmentName
-        val resourceType = if (r.resourceType == "SPACE") "Espacio" else "Equipo"
-        val statusLabel = mapOf(
-            "PENDIENTE" to "Pendiente",
-            "APROBADA" to "En préstamo",
-            "RECHAZADA" to "Rechazada",
-            "CANCELADA" to "Cancelada",
-            "DEVUELTA" to "Devuelta"
-        )
-        val msg = """
-            Tipo: $resourceType
-            Recurso: ${resourceName ?: "—"}
-            Fecha: ${r.reservationDate}
-            Horario: ${r.startTime} - ${r.endTime}
-            Estado: ${statusLabel[r.status] ?: r.status}
-            Motivo: ${r.purpose}
-            Observaciones: ${r.observations ?: "—"}
-            Comentario admin: ${r.adminComment ?: "—"}
-        """.trimIndent()
-        AlertDialog.Builder(requireContext())
-            .setTitle("Detalle de solicitud #${r.id}")
-            .setMessage(msg)
-            .setPositiveButton("Cerrar", null).show()
+        // Cargar detalle completo
+        val session = SessionManager(requireContext())
+        lifecycleScope.launch {
+            try {
+                val resp = RetrofitClient.create(requireContext()).getMyReservation(r.id, session.userId)
+                if (resp.isSuccessful) {
+                    val d = resp.body() ?: return@launch
+                    val statusLabel = mapOf("PENDIENTE" to "Pendiente", "APROBADA" to "En préstamo", "RECHAZADA" to "Rechazada", "CANCELADA" to "Cancelada", "DEVUELTA" to "Devuelta")
+                    val msg = """
+                        Tipo: ${if (d.resourceType == "SPACE") "Espacio" else "Equipo"}
+                        Recurso: ${d.resourceName ?: "—"}
+                        Fecha inicio: ${d.reservationDate}
+                        Hora inicio: ${d.startTime ?: "—"}
+                        Fecha devolución: ${d.endDate ?: d.reservationDate}
+                        Hora fin: ${d.endTime ?: "—"}
+                        Estado: ${statusLabel[d.status] ?: d.status}
+                        Motivo: ${d.purpose ?: "—"}
+                        Observaciones: ${d.observations ?: "—"}
+                        Comentario admin: ${d.adminComment ?: "—"}
+                        ${if (d.returnCondition != null) "Devolución: ${d.returnCondition}" else ""}
+                        ${if (d.returnDescription != null) "Desc. devolución: ${d.returnDescription}" else ""}
+                    """.trimIndent()
+                    AlertDialog.Builder(requireContext()).setTitle("Detalle #${d.id}").setMessage(msg).setPositiveButton("Cerrar", null).show()
+                }
+            } catch (_: Exception) { Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show() }
+        }
     }
 
     private fun showRejectionReasonDialog(r: Reservation) {
-        val reason = r.adminComment?.takeIf { it.isNotBlank() } ?: "No se proporcionó motivo de rechazo."
-        AlertDialog.Builder(requireContext())
-            .setTitle("Motivo de rechazo")
-            .setMessage(reason)
-            .setPositiveButton("Cerrar", null).show()
+        // Cargar detalle para obtener adminComment
+        val session = SessionManager(requireContext())
+        lifecycleScope.launch {
+            try {
+                val resp = RetrofitClient.create(requireContext()).getMyReservation(r.id, session.userId)
+                if (resp.isSuccessful) {
+                    val d = resp.body() ?: return@launch
+                    val reason = d.adminComment?.takeIf { it.isNotBlank() } ?: "No se proporcionó motivo de rechazo."
+                    AlertDialog.Builder(requireContext()).setTitle("Motivo de rechazo").setMessage(reason).setPositiveButton("Cerrar", null).show()
+                }
+            } catch (_: Exception) { Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show() }
+        }
     }
 
     private fun showEditReservationDialog(r: Reservation) {
         val ctx = requireContext()
         val layout = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(48, 16, 48, 0) }
-
         fun label(text: String) = TextView(ctx).apply { this.text = text; textSize = 12f; setPadding(0, 12, 0, 2) }
 
         val etDate = EditText(ctx).apply { hint = "YYYY-MM-DD"; setText(r.reservationDate) }
-        val etStart = EditText(ctx).apply { hint = "HH:MM"; setText(r.startTime) }
-        val etEnd = EditText(ctx).apply { hint = "HH:MM"; setText(r.endTime) }
-        val etPurpose = EditText(ctx).apply { hint = "Motivo de la reserva"; minLines = 3; setText(r.purpose) }
-        val etObs = EditText(ctx).apply { hint = "Observaciones (opcional)"; setText(r.observations ?: "") }
+        val etStart = EditText(ctx).apply { hint = "HH:MM"; setText(r.startTime ?: "") }
+        val etEndDate = EditText(ctx).apply { hint = "YYYY-MM-DD"; setText(r.endDate ?: r.reservationDate) }
+        val etEnd = EditText(ctx).apply { hint = "HH:MM"; setText(r.endTime ?: "") }
+        val etPurpose = EditText(ctx).apply { hint = "Motivo de la reserva"; minLines = 3; setText(r.purpose ?: "") }
 
-        layout.addView(label("Fecha de reserva *")); layout.addView(etDate)
+        layout.addView(label("Fecha inicio *")); layout.addView(etDate)
         layout.addView(label("Hora inicio *")); layout.addView(etStart)
+        layout.addView(label("Fecha devolución *")); layout.addView(etEndDate)
         layout.addView(label("Hora fin *")); layout.addView(etEnd)
         layout.addView(label("Motivo *")); layout.addView(etPurpose)
-        layout.addView(label("Observaciones")); layout.addView(etObs)
 
         val sv = ScrollView(ctx).apply { addView(layout) }
         val session = SessionManager(ctx)
@@ -181,6 +190,7 @@ class MyRequestsFragment : Fragment() {
             .setPositiveButton("Guardar") { _, _ ->
                 val date = etDate.text.toString().trim()
                 val start = etStart.text.toString().trim()
+                val endDate = etEndDate.text.toString().trim()
                 val end = etEnd.text.toString().trim()
                 val purpose = etPurpose.text.toString().trim()
                 if (date.isEmpty() || start.isEmpty() || end.isEmpty() || purpose.isEmpty()) {
@@ -193,18 +203,18 @@ class MyRequestsFragment : Fragment() {
                         val req = UpdateReservationRequest(
                             requesterId = session.userId,
                             resourceType = r.resourceType,
-                            spaceId = r.spaceId,
-                            equipmentId = r.equipmentId,
+                            resourceId = null,
                             reservationDate = date,
                             startTime = start,
+                            endDate = endDate.ifBlank { date },
                             endTime = end,
                             purpose = purpose,
-                            observations = etObs.text.toString().trim().ifEmpty { null }
+                            observations = null
                         )
                         val resp = api.updateMyReservation(r.id, session.userId, req)
                         if (resp.isSuccessful) {
                             Toast.makeText(ctx, "Solicitud actualizada", Toast.LENGTH_SHORT).show(); load()
-                        } else Toast.makeText(ctx, "Error: ${resp.code()}", Toast.LENGTH_SHORT).show()
+                        } else Toast.makeText(ctx, "Error al actualizar", Toast.LENGTH_SHORT).show()
                     } catch (_: Exception) { Toast.makeText(ctx, "Error de conexión", Toast.LENGTH_SHORT).show() }
                 }
             }
@@ -232,19 +242,12 @@ class MyReservationAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val r = items[position]
         holder.view.apply {
-            val resourceName = if (r.resourceType == "SPACE") r.spaceName else r.equipmentName
-            findViewById<TextView>(R.id.tvRequester).text = resourceName ?: "—"
-            findViewById<TextView>(R.id.tvResource).text = r.purpose
-            findViewById<TextView>(R.id.tvDate).text = "${r.reservationDate} | ${r.startTime} - ${r.endTime}"
+            findViewById<TextView>(R.id.tvRequester).text = r.resourceName ?: "—"
+            findViewById<TextView>(R.id.tvResource).text = "${if (r.resourceType == "SPACE") "Espacio" else "Equipo"} • ${r.schedule ?: ""}"
+            findViewById<TextView>(R.id.tvDate).text = r.reservationDate
 
             val tvStatus = findViewById<TextView>(R.id.tvStatus)
-            val statusLabel = mapOf(
-                "PENDIENTE" to "Pendiente",
-                "APROBADA" to "En préstamo",
-                "RECHAZADA" to "Rechazada",
-                "CANCELADA" to "Cancelada",
-                "DEVUELTA" to "Devuelta"
-            )
+            val statusLabel = mapOf("PENDIENTE" to "Pendiente", "APROBADA" to "En préstamo", "RECHAZADA" to "Rechazada", "CANCELADA" to "Cancelada", "DEVUELTA" to "Devuelta")
             tvStatus.text = statusLabel[r.status] ?: r.status
             tvStatus.setBackgroundColor(when (r.status) {
                 "PENDIENTE" -> 0xFFF59E0B.toInt()
@@ -262,9 +265,7 @@ class MyReservationAdapter(
             val btnEditReservation = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnEditReservation)
             val btnViewRejection = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnViewRejection)
 
-            // Always show view detail
             btnViewDetail.setOnClickListener { onView(r) }
-
             btnReturn.visibility = View.GONE
 
             if (r.status == "PENDIENTE") {

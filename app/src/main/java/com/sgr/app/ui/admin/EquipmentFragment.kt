@@ -12,7 +12,7 @@ import com.sgr.app.R
 import com.sgr.app.databinding.FragmentEquipmentBinding
 import com.sgr.app.model.CreateEquipmentRequest
 import com.sgr.app.model.Equipment
-import com.sgr.app.model.HistoryItem
+import com.sgr.app.model.Reservation
 import com.sgr.app.network.RetrofitClient
 import kotlinx.coroutines.launch
 
@@ -144,7 +144,7 @@ class EquipmentFragment : Fragment() {
         val condValues = arrayOf("DISPONIBLE", "EN_USO", "MANTENIMIENTO")
         val spinnerCond = Spinner(ctx).apply {
             adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, condValues)
-            val idx = condValues.indexOf(eq?.equipmentCondition ?: "DISPONIBLE").coerceAtLeast(0)
+            val idx = condValues.indexOf(eq?.condition ?: "DISPONIBLE").coerceAtLeast(0)
             setSelection(idx)
         }
         val cbStudents = CheckBox(ctx).apply { text = "Permite estudiantes"; isChecked = eq?.allowStudents ?: true }
@@ -170,8 +170,9 @@ class EquipmentFragment : Fragment() {
                 category = etCategory.text.toString().trim(),
                 description = etDescription.text.toString().trim(),
                 allowStudents = cbStudents.isChecked,
-                equipmentCondition = condValues[spinnerCond.selectedItemPosition],
-                active = cbActive.isChecked
+                condition = condValues[spinnerCond.selectedItemPosition],
+                active = cbActive.isChecked,
+                spaceId = eq?.spaceId
             )
         }
         return Pair(sv, builder)
@@ -189,7 +190,7 @@ class EquipmentFragment : Fragment() {
                         val resp = RetrofitClient.create(requireContext()).createEquipment(req)
                         if (resp.isSuccessful) {
                             Toast.makeText(requireContext(), "Equipo creado", Toast.LENGTH_SHORT).show(); load()
-                        } else Toast.makeText(requireContext(), "Error: ${resp.code()}", Toast.LENGTH_SHORT).show()
+                        } else Toast.makeText(requireContext(), "Error al crear equipo", Toast.LENGTH_SHORT).show()
                     } catch (_: Exception) { Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show() }
                 }
             }
@@ -208,7 +209,7 @@ class EquipmentFragment : Fragment() {
                         val resp = RetrofitClient.create(requireContext()).updateEquipment(eq.id, req)
                         if (resp.isSuccessful) {
                             Toast.makeText(requireContext(), "Equipo actualizado", Toast.LENGTH_SHORT).show(); load()
-                        } else Toast.makeText(requireContext(), "Error: ${resp.code()}", Toast.LENGTH_SHORT).show()
+                        } else Toast.makeText(requireContext(), "Error al actualizar", Toast.LENGTH_SHORT).show()
                     } catch (_: Exception) { Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show() }
                 }
             }
@@ -222,7 +223,7 @@ class EquipmentFragment : Fragment() {
             Nombre: ${eq.name}
             No. Inventario: ${eq.inventoryNumber}
             Categoría: ${eq.category}
-            Condición: ${eq.equipmentCondition}
+            Condición: ${eq.condition}
             Permite estudiantes: $allowStudents
             Estado: $active
             Descripción: ${eq.description}
@@ -245,13 +246,13 @@ class EquipmentFragment : Fragment() {
         }
     }
 
-    private fun showHistoryDialog(title: String, items: List<HistoryItem>) {
+    private fun showHistoryDialog(title: String, items: List<Reservation>) {
         if (items.isEmpty()) {
             AlertDialog.Builder(requireContext()).setTitle(title).setMessage("Sin historial registrado.").setPositiveButton("Cerrar", null).show()
             return
         }
-        val msg = items.joinToString("\n\n") { h ->
-            "• ${h.action ?: "Acción"}\n  Por: ${h.changedBy ?: "—"}\n  ${h.changedAt ?: ""}\n  ${h.details ?: ""}"
+        val msg = items.joinToString("\n\n") { r ->
+            "• ${r.requesterName ?: "—"}\n  Fecha: ${r.reservationDate}\n  Horario: ${r.schedule ?: ""}\n  Estado: ${r.status}"
         }
         val tv = TextView(requireContext()).apply { text = msg; setPadding(48, 24, 48, 0); textSize = 13f }
         val sv = ScrollView(requireContext()).apply { addView(tv) }
@@ -283,8 +284,8 @@ class EquipmentAdapter(
             findViewById<TextView>(R.id.tvSubtitle).text = "${e.category} | No. ${e.inventoryNumber}"
             findViewById<TextView>(R.id.tvDetail).text = e.description
             val badge = findViewById<TextView>(R.id.tvBadge)
-            badge.text = e.equipmentCondition
-            badge.setBackgroundColor(when (e.equipmentCondition) {
+            badge.text = e.condition
+            badge.setBackgroundColor(when (e.condition) {
                 "DISPONIBLE" -> 0xFF10B981.toInt()
                 "EN_USO" -> 0xFFF59E0B.toInt()
                 else -> 0xFFEF4444.toInt()

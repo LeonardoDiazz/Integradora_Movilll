@@ -19,18 +19,17 @@ class UsersFragment : Fragment() {
 
     private var _binding: FragmentUsersBinding? = null
     private val binding get() = _binding!!
-
     private var currentPage = 0
     private var totalPages = 1
 
-    private val rolesLabels = arrayOf("Todos", "Administrador", "Usuario solicitante")
-    private val rolesValues = arrayOf("", "ADMIN", "STUDENTS")
+    private val rolLabels = arrayOf("Todos los Roles", "Administrador", "Personal UTEZ", "Estudiante")
+    private val rolValues = arrayOf("", "ADMIN", "STAFF", "STUDENT")
 
-    private val tiposLabels = arrayOf("Todos", "Estudiante", "Personal")
-    private val tiposValues = arrayOf("", "ESTUDIANTE", "STAFF")
+    private val tipoLabels = arrayOf("Todos los Tipos", "Administrativo", "Personal Académico", "Estudiante")
+    private val tipoValues = arrayOf("", "Administrativo", "Personal Académico", "Estudiante")
 
-    private val estadosLabels = arrayOf("Todos", "Activo", "Inactivo")
-    private val estadosValues = arrayOf("", "ACTIVE", "INACTIVE")
+    private val estadoLabels = arrayOf("Todos", "Activo", "Inactivo")
+    private val estadoValues = arrayOf("", "ACTIVE", "INACTIVE")
 
     private var filterRol = ""
     private var filterTipo = ""
@@ -47,21 +46,22 @@ class UsersFragment : Fragment() {
         requireActivity().title = ""
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        setupSpinner(binding.spinnerRol, rolesLabels) { pos ->
-            if (!isInitializing) { filterRol = rolesValues[pos]; filterTipo = ""; filterEstado = ""; currentPage = 0; load() }
+        binding.btnAddUser.visibility = View.GONE
+
+        setupSpinner(binding.spinnerRol, rolLabels) { pos ->
+            if (!isInitializing) { filterRol = rolValues[pos]; filterTipo = ""; filterEstado = ""; currentPage = 0; load() }
         }
-        setupSpinner(binding.spinnerTipo, tiposLabels) { pos ->
-            if (!isInitializing) { filterTipo = tiposValues[pos]; filterRol = ""; filterEstado = ""; currentPage = 0; load() }
+        setupSpinner(binding.spinnerTipo, tipoLabels) { pos ->
+            if (!isInitializing) { filterTipo = tipoValues[pos]; filterRol = ""; filterEstado = ""; currentPage = 0; load() }
         }
-        setupSpinner(binding.spinnerEstado, estadosLabels) { pos ->
-            if (!isInitializing) { filterEstado = estadosValues[pos]; filterRol = ""; filterTipo = ""; currentPage = 0; load() }
+        setupSpinner(binding.spinnerEstado, estadoLabels) { pos ->
+            if (!isInitializing) { filterEstado = estadoValues[pos]; filterRol = ""; filterTipo = ""; currentPage = 0; load() }
         }
 
         isInitializing = false
 
         binding.btnClearFilters.setOnClickListener {
-            filterRol = ""; filterTipo = ""; filterEstado = ""
-            currentPage = 0
+            filterRol = ""; filterTipo = ""; filterEstado = ""; currentPage = 0
             isInitializing = true
             binding.spinnerRol.setSelection(0)
             binding.spinnerTipo.setSelection(0)
@@ -69,8 +69,6 @@ class UsersFragment : Fragment() {
             isInitializing = false
             load()
         }
-
-        binding.btnAddUser.setOnClickListener { showCreateUserDialog() }
 
         binding.btnPrev.setOnClickListener { if (currentPage > 0) { currentPage--; load() } }
         binding.btnNext.setOnClickListener { if (currentPage < totalPages - 1) { currentPage++; load() } }
@@ -89,17 +87,16 @@ class UsersFragment : Fragment() {
     }
 
     private fun load() {
-        val filter = when {
-            filterEstado.isNotEmpty() -> filterEstado
+        val backendFilter = when {
             filterRol.isNotEmpty() -> filterRol
-            filterTipo.isNotEmpty() -> filterTipo
+            filterEstado.isNotEmpty() -> filterEstado
             else -> ""
         }
         binding.progressBar.visibility = View.VISIBLE
         lifecycleScope.launch {
             try {
                 val api = RetrofitClient.create(requireContext())
-                val response = api.getUsers(currentPage, 10, filter, "")
+                val response = api.getUsers(currentPage, 10, backendFilter, "")
                 if (response.isSuccessful) {
                     val page = response.body() ?: return@launch
                     totalPages = page.totalPages.coerceAtLeast(1)
@@ -118,141 +115,100 @@ class UsersFragment : Fragment() {
                 }
             } catch (_: Exception) {
                 Toast.makeText(requireContext(), "Error al cargar usuarios", Toast.LENGTH_SHORT).show()
-            } finally {
-                binding.progressBar.visibility = View.GONE
-            }
+            } finally { binding.progressBar.visibility = View.GONE }
         }
     }
 
-    private fun buildUserForm(user: User? = null, isCreate: Boolean = true): Pair<ScrollView, () -> CreateUserRequest?> {
-        val ctx = requireContext()
-        val layout = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(48, 16, 48, 0) }
-
-        fun label(text: String) = TextView(ctx).apply { this.text = text; textSize = 12f; setPadding(0, 12, 0, 2) }
-
-        val etName = EditText(ctx).apply { hint = "Nombre"; setText(user?.name ?: "") }
-        val etLastName = EditText(ctx).apply { hint = "Apellido"; setText(user?.lastName ?: "") }
-        val etEmail = EditText(ctx).apply { hint = "Correo electrónico"; inputType = android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS; setText(user?.email ?: "") }
-        val etIdentifier = EditText(ctx).apply { hint = "Matrícula / ID"; setText(user?.identifier ?: "") }
-        val etPhone = EditText(ctx).apply { hint = "Teléfono (opcional)"; inputType = android.text.InputType.TYPE_CLASS_PHONE; setText(user?.phone ?: "") }
-        val etBirthDate = EditText(ctx).apply { hint = "Fecha nacimiento (YYYY-MM-DD)"; setText(user?.birthDate ?: "") }
-
-        val roleValues = arrayOf("STUDENTS", "ADMIN")
-        val roleLabels = arrayOf("Usuario solicitante", "Administrador")
-        val spinnerRole = Spinner(ctx).apply {
-            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, roleLabels)
-            val idx = roleValues.indexOf(user?.role ?: "STUDENTS").coerceAtLeast(0)
-            setSelection(idx)
-        }
-
-        val userTypeValues = arrayOf("ESTUDIANTE", "STAFF")
-        val spinnerUserType = Spinner(ctx).apply {
-            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, userTypeValues)
-            val idx = userTypeValues.indexOf(user?.userType ?: "ESTUDIANTE").coerceAtLeast(0)
-            setSelection(idx)
-        }
-
-        val cbActive = CheckBox(ctx).apply { text = "Activo"; isChecked = user?.active ?: true }
-
-        layout.addView(label("Nombre *")); layout.addView(etName)
-        layout.addView(label("Apellido *")); layout.addView(etLastName)
-        layout.addView(label("Correo *")); layout.addView(etEmail)
-        layout.addView(label("Matrícula / ID")); layout.addView(etIdentifier)
-        layout.addView(label("Teléfono")); layout.addView(etPhone)
-        layout.addView(label("Fecha de nacimiento")); layout.addView(etBirthDate)
-        layout.addView(label("Rol")); layout.addView(spinnerRole)
-        layout.addView(label("Tipo de usuario")); layout.addView(spinnerUserType)
-        layout.addView(cbActive)
-
-        // Password only shown for create, or optionally for edit
-        val etPassword = EditText(ctx).apply {
-            hint = if (isCreate) "Contraseña *" else "Nueva contraseña (dejar vacío para no cambiar)"
-            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-        }
-        layout.addView(label(if (isCreate) "Contraseña" else "Contraseña")); layout.addView(etPassword)
-
-        val sv = ScrollView(ctx).apply { addView(layout) }
-
-        val builder: () -> CreateUserRequest? = {
-            val name = etName.text.toString().trim()
-            val lastName = etLastName.text.toString().trim()
-            val email = etEmail.text.toString().trim()
-            val password = etPassword.text.toString()
-            if (name.isEmpty() || lastName.isEmpty() || email.isEmpty()) {
-                Toast.makeText(ctx, "Nombre, apellido y correo son requeridos", Toast.LENGTH_SHORT).show(); null
-            } else if (isCreate && password.isEmpty()) {
-                Toast.makeText(ctx, "La contraseña es requerida", Toast.LENGTH_SHORT).show(); null
-            } else CreateUserRequest(
-                name = name,
-                lastName = lastName,
-                email = email,
-                identifier = etIdentifier.text.toString().trim(),
-                password = password.ifEmpty { "NO_CHANGE" },
-                role = roleValues[spinnerRole.selectedItemPosition],
-                active = cbActive.isChecked,
-                userType = userTypeValues[spinnerUserType.selectedItemPosition],
-                birthDate = etBirthDate.text.toString().trim().ifEmpty { null },
-                phone = etPhone.text.toString().trim().ifEmpty { null }
-            )
-        }
-        return Pair(sv, builder)
-    }
-
-    private fun showCreateUserDialog() {
-        val (view, buildRequest) = buildUserForm(isCreate = true)
-        AlertDialog.Builder(requireContext())
-            .setTitle("Crear usuario")
-            .setView(view)
-            .setPositiveButton("Crear") { _, _ ->
-                val req = buildRequest() ?: return@setPositiveButton
-                lifecycleScope.launch {
-                    try {
-                        val resp = RetrofitClient.create(requireContext()).createUser(req)
-                        if (resp.isSuccessful) {
-                            Toast.makeText(requireContext(), "Usuario creado", Toast.LENGTH_SHORT).show(); load()
-                        } else Toast.makeText(requireContext(), "Error: ${resp.code()}", Toast.LENGTH_SHORT).show()
-                    } catch (_: Exception) { Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show() }
-                }
-            }
-            .setNegativeButton("Cancelar", null).show()
-    }
-
-    private fun showEditUserDialog(user: User) {
-        val (view, buildRequest) = buildUserForm(user, isCreate = false)
-        AlertDialog.Builder(requireContext())
-            .setTitle("Editar usuario")
-            .setView(view)
-            .setPositiveButton("Guardar") { _, _ ->
-                val req = buildRequest() ?: return@setPositiveButton
-                lifecycleScope.launch {
-                    try {
-                        val resp = RetrofitClient.create(requireContext()).updateUser(user.id, req)
-                        if (resp.isSuccessful) {
-                            Toast.makeText(requireContext(), "Usuario actualizado", Toast.LENGTH_SHORT).show(); load()
-                        } else Toast.makeText(requireContext(), "Error: ${resp.code()}", Toast.LENGTH_SHORT).show()
-                    } catch (_: Exception) { Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show() }
-                }
-            }
-            .setNegativeButton("Cancelar", null).show()
+    private fun formatRole(role: String): String = when (role) {
+        "ADMIN" -> "Administrador"; "STAFF" -> "Personal UTEZ"; "STUDENT" -> "Estudiante"; else -> role
     }
 
     private fun showViewUserDialog(user: User) {
-        val rolLabel = if (user.role == "ADMIN") "Administrador" else "Usuario solicitante"
-        val active = if (user.active) "Activo" else "Inactivo"
+        val identifierLabel = if (user.role == "STUDENT") "Matrícula" else "No. Empleado"
         val msg = """
             Nombre: ${user.name} ${user.lastName}
             Correo: ${user.email}
-            Matrícula/ID: ${user.identifier ?: "—"}
-            Teléfono: ${user.phone ?: "—"}
-            Rol: $rolLabel
+            Teléfono: ${user.phone ?: "Sin registrar"}
+            Rol: ${formatRole(user.role)}
             Tipo: ${user.userType ?: "—"}
+            $identifierLabel: ${user.identifier ?: "—"}
             Fecha nacimiento: ${user.birthDate ?: "—"}
-            Estado: $active
+            Estado: ${if (user.active) "Activo" else "Inactivo"}
         """.trimIndent()
-        AlertDialog.Builder(requireContext())
-            .setTitle("Detalle del usuario")
-            .setMessage(msg)
-            .setPositiveButton("Cerrar", null).show()
+        AlertDialog.Builder(requireContext()).setTitle("Detalle del usuario").setMessage(msg).setPositiveButton("Cerrar", null).show()
+    }
+
+    private fun showEditUserDialog(user: User) {
+        val ctx = requireContext()
+        val layout = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(48, 16, 48, 0) }
+        fun label(text: String) = TextView(ctx).apply { this.text = text; textSize = 12f; setPadding(0, 12, 0, 2) }
+
+        val etName = EditText(ctx).apply { hint = "Nombre"; setText(user.name) }
+        val etLastName = EditText(ctx).apply { hint = "Apellidos"; setText(user.lastName) }
+        val etBirthDate = EditText(ctx).apply { hint = "YYYY-MM-DD"; setText(user.birthDate ?: "") }
+        val etIdentifier = EditText(ctx).apply { hint = if (user.role == "STUDENT") "Matrícula" else "No. Empleado"; setText(user.identifier ?: "") }
+        val etEmail = EditText(ctx).apply { hint = "correo@utez.edu.mx"; setText(user.email); inputType = android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS }
+        val etPhone = EditText(ctx).apply { hint = "10 dígitos"; setText(user.phone ?: ""); inputType = android.text.InputType.TYPE_CLASS_PHONE }
+
+        val roleValues = arrayOf("ADMIN", "STAFF", "STUDENT")
+        val roleLabels = arrayOf("Administrador", "Personal UTEZ", "Estudiante")
+        val spinnerRole = Spinner(ctx).apply {
+            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, roleLabels)
+            setSelection(roleValues.indexOf(user.role).coerceAtLeast(0))
+        }
+
+        val typeValues = arrayOf("Administrativo", "Personal Académico", "Estudiante")
+        val spinnerType = Spinner(ctx).apply {
+            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, typeValues)
+            setSelection(typeValues.indexOf(user.userType ?: "").coerceAtLeast(0))
+        }
+
+        val cbActive = CheckBox(ctx).apply { text = "Activo"; isChecked = user.active }
+
+        layout.addView(label("Nombre *")); layout.addView(etName)
+        layout.addView(label("Apellidos *")); layout.addView(etLastName)
+        layout.addView(label("Fecha de nacimiento *")); layout.addView(etBirthDate)
+        layout.addView(label("Rol *")); layout.addView(spinnerRole)
+        layout.addView(label("Tipo de usuario *")); layout.addView(spinnerType)
+        layout.addView(label(if (user.role == "STUDENT") "Matrícula *" else "No. Empleado *")); layout.addView(etIdentifier)
+        layout.addView(label("Correo institucional *")); layout.addView(etEmail)
+        layout.addView(label("Teléfono")); layout.addView(etPhone)
+        layout.addView(cbActive)
+
+        val sv = ScrollView(ctx).apply { addView(layout) }
+
+        AlertDialog.Builder(ctx).setTitle("Editar usuario").setView(sv)
+            .setPositiveButton("Guardar") { _, _ ->
+                val name = etName.text.toString().trim()
+                val lastName = etLastName.text.toString().trim()
+                val email = etEmail.text.toString().trim()
+                val phone = etPhone.text.toString().trim()
+                val identifier = etIdentifier.text.toString().trim()
+                val birthDate = etBirthDate.text.toString().trim()
+
+                if (name.isEmpty() || lastName.isEmpty() || email.isEmpty() || identifier.isEmpty()) {
+                    Toast.makeText(ctx, "Completa todos los campos obligatorios", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                if (phone.isNotEmpty() && phone.length != 10) {
+                    Toast.makeText(ctx, "El teléfono debe tener 10 dígitos", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+
+                lifecycleScope.launch {
+                    try {
+                        val req = CreateUserRequest(
+                            name = name, lastName = lastName, email = email, identifier = identifier,
+                            password = "", role = roleValues[spinnerRole.selectedItemPosition],
+                            active = cbActive.isChecked, userType = typeValues[spinnerType.selectedItemPosition],
+                            birthDate = birthDate.ifBlank { null }, phone = phone.ifBlank { null }
+                        )
+                        val resp = RetrofitClient.create(ctx).updateUser(user.id, req)
+                        if (resp.isSuccessful) { Toast.makeText(ctx, "Usuario actualizado", Toast.LENGTH_SHORT).show(); load() }
+                        else Toast.makeText(ctx, "Error al actualizar", Toast.LENGTH_SHORT).show()
+                    } catch (_: Exception) { Toast.makeText(ctx, "Error de conexión", Toast.LENGTH_SHORT).show() }
+                }
+            }.setNegativeButton("Cancelar", null).show()
     }
 
     override fun onDestroyView() { super.onDestroyView(); _binding = null }
@@ -274,24 +230,21 @@ class UserAdapter(
 
     override fun onBindViewHolder(holder: VH, position: Int) {
         val u = items[position]
+        val roleLabel = when (u.role) { "ADMIN" -> "Administrador"; "STAFF" -> "Personal UTEZ"; else -> "Estudiante" }
         holder.view.apply {
-            val rolEs = if (u.role == "ADMIN") "Administrador" else "Usuario solicitante"
             findViewById<TextView>(R.id.tvTitle).text = "${u.name} ${u.lastName}"
-            findViewById<TextView>(R.id.tvSubtitle).text = u.email
-            findViewById<TextView>(R.id.tvDetail).text = "Rol: $rolEs | ID: ${u.identifier ?: "—"}"
-
+            findViewById<TextView>(R.id.tvSubtitle).text = "${u.email} | ${u.identifier ?: "—"}"
+            findViewById<TextView>(R.id.tvDetail).text = "$roleLabel | ${u.userType ?: "—"}"
             val badge = findViewById<TextView>(R.id.tvBadge)
-            badge.text = if (u.active) "ACTIVO" else "INACTIVO"
+            badge.text = if (u.active) "Activo" else "Inactivo"
             badge.setBackgroundColor(if (u.active) 0xFF10B981.toInt() else 0xFFEF4444.toInt())
-
             findViewById<com.google.android.material.button.MaterialButton>(R.id.btnView).setOnClickListener { onView(u) }
             findViewById<com.google.android.material.button.MaterialButton>(R.id.btnEdit).setOnClickListener { onEdit(u) }
-            // Hide history for users
             findViewById<com.google.android.material.button.MaterialButton>(R.id.btnHistory).visibility = View.GONE
-
-            val btnToggle = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnToggle)
-            btnToggle.text = if (u.active) "Desactivar" else "Activar"
-            btnToggle.setOnClickListener { onToggle(u) }
+            findViewById<com.google.android.material.button.MaterialButton>(R.id.btnToggle).apply {
+                text = if (u.active) "Desactivar" else "Activar"
+                setOnClickListener { onToggle(u) }
+            }
         }
     }
 }

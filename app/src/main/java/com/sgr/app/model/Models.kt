@@ -4,7 +4,7 @@ data class LoginRequest(val email: String, val password: String)
 
 data class LoginResponse(
     val token: String,
-    val tokenType: String,
+    val tokenType: String?,
     val userId: Long,
     val name: String,
     val lastName: String,
@@ -58,37 +58,53 @@ data class Equipment(
     val description: String,
     val allowStudents: Boolean,
     val active: Boolean,
-    val equipmentCondition: String,
-    val createdAt: String?
+    val condition: String,
+    val spaceName: String?,
+    val spaceId: Long?
 )
 
+// Reservación - vista de lista (lo que devuelve GET /api/reservations)
 data class Reservation(
     val id: Long,
-    val requesterId: Long,
     val requesterName: String?,
-    val requesterEmail: String?,
+    val requesterType: String?,
     val resourceType: String,
-    val spaceId: Long?,
-    val spaceName: String?,
-    val equipmentId: Long?,
-    val equipmentName: String?,
+    val resourceName: String?,
     val reservationDate: String,
-    val startTime: String,
-    val endTime: String,
-    val purpose: String,
-    val observations: String?,
+    val endDate: String?,
+    val schedule: String?,
     val status: String,
+    // Campos de detalle (solo vienen en GET /{id})
+    val requesterEmail: String?,
+    val startTime: String?,
+    val endTime: String?,
+    val purpose: String?,
+    val observations: String?,
     val adminComment: String?,
-    val createdAt: String?
+    val returnCondition: String?,
+    val returnDescription: String?,
+    val returnedAt: String?
 )
 
 data class CreateReservationRequest(
     val requesterId: Long,
     val resourceType: String,
-    val spaceId: Long?,
-    val equipmentId: Long?,
+    val resourceId: Long,
     val reservationDate: String,
     val startTime: String,
+    val endDate: String?,
+    val endTime: String,
+    val purpose: String,
+    val observations: String?
+)
+
+data class UpdateReservationRequest(
+    val requesterId: Long,
+    val resourceType: String,
+    val resourceId: Long?,
+    val reservationDate: String,
+    val startTime: String,
+    val endDate: String?,
     val endTime: String,
     val purpose: String,
     val observations: String?
@@ -96,32 +112,33 @@ data class CreateReservationRequest(
 
 data class ApproveRequest(val adminComment: String?)
 data class RejectRequest(val adminComment: String)
-data class ReturnRequest(val condition: String, val description: String?)
+data class ReturnRequest(val returnCondition: String, val returnDescription: String?)
 
 data class PageResponse<T>(
     val content: List<T>,
     val totalElements: Long,
     val totalPages: Int,
     val number: Int,
-    val size: Int
+    val size: Int,
+    val last: Boolean?
 )
 
 data class DashboardStats(
-    val activeUsers: Int,
-    val totalUsers: Int,
-    val totalSpaces: Int,
-    val totalEquipments: Int,
-    val pendingReservations: Int,
-    val totalReservations: Int,
-    val approvedReservations: Int,
-    val rejectedReservations: Int,
-    val pendingRequests: Int,
-    val totalRequests: Int
+    val activeUsers: Int?,
+    val totalUsers: Int?,
+    val totalSpaces: Int?,
+    val totalEquipments: Int?,
+    val pendingReservations: Int?,
+    val totalReservations: Int?,
+    val approvedReservations: Int?,
+    val rejectedReservations: Int?,
+    val pendingRequests: Int?,
+    val totalRequests: Int?
 )
 
 data class MessageResponse(val message: String)
 
-data class UpdateProfileRequest(val name: String, val lastName: String, val phone: String?)
+data class UpdateProfileRequest(val phone: String?)
 data class ChangePasswordRequest(val currentPassword: String, val newPassword: String, val confirmPassword: String)
 
 data class CreateSpaceRequest(
@@ -141,26 +158,7 @@ data class CreateEquipmentRequest(
     val category: String,
     val description: String,
     val allowStudents: Boolean,
-    val equipmentCondition: String,
-    val active: Boolean
-)
-
-data class UpdateReservationRequest(
-    val requesterId: Long,
-    val resourceType: String,
-    val spaceId: Long?,
-    val equipmentId: Long?,
-    val reservationDate: String,
-    val startTime: String,
-    val endTime: String,
-    val purpose: String,
-    val observations: String?
-)
-
-data class HistoryItem(
-    val id: Long?,
-    val action: String?,
-    val changedBy: String?,
-    val changedAt: String?,
-    val details: String?
+    val condition: String,
+    val active: Boolean,
+    val spaceId: Long?
 )

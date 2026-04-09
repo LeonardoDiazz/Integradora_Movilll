@@ -58,7 +58,7 @@ class ReservationsFragment : Fragment() {
         isInitializing = false
 
         binding.etSearch.addTextChangedListener(object : android.text.TextWatcher {
-            override fun afterTextChanged(s: android.text.Editable?) { requesterSearch = s?.toString()?.trim() ?: ""; currentPage = 0; load() }
+            override fun afterTextChanged(s: android.text.Editable?) { requesterSearch = s?.toString()?.trim() ?: "" }
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
@@ -84,42 +84,38 @@ class ReservationsFragment : Fragment() {
     private fun showCreateReservationDialog() {
         val ctx = requireContext()
         val layout = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(48, 16, 48, 0) }
-
         fun label(text: String) = TextView(ctx).apply { this.text = text; textSize = 12f; setPadding(0, 12, 0, 2) }
 
-        val etRequesterId = EditText(ctx).apply { hint = "ID del solicitante (número)"; inputType = android.text.InputType.TYPE_CLASS_NUMBER }
+        val etRequesterId = EditText(ctx).apply { hint = "ID del solicitante"; inputType = android.text.InputType.TYPE_CLASS_NUMBER }
         val etDate = EditText(ctx).apply { hint = "YYYY-MM-DD" }
         val etStart = EditText(ctx).apply { hint = "HH:MM" }
+        val etEndDate = EditText(ctx).apply { hint = "YYYY-MM-DD" }
         val etEnd = EditText(ctx).apply { hint = "HH:MM" }
         val etPurpose = EditText(ctx).apply { hint = "Motivo de la reserva"; minLines = 3 }
-        val etObs = EditText(ctx).apply { hint = "Observaciones (opcional)" }
 
         val typeValues = arrayOf("SPACE", "EQUIPMENT")
         val typeLabels = arrayOf("Espacio", "Equipo")
-        val spinnerType = Spinner(ctx).apply {
-            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, typeLabels)
-        }
-        val etResourceId = EditText(ctx).apply { hint = "ID del recurso (número)"; inputType = android.text.InputType.TYPE_CLASS_NUMBER }
+        val spinnerType = Spinner(ctx).apply { adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, typeLabels) }
+        val etResourceId = EditText(ctx).apply { hint = "ID del recurso"; inputType = android.text.InputType.TYPE_CLASS_NUMBER }
 
         layout.addView(label("ID Solicitante *")); layout.addView(etRequesterId)
         layout.addView(label("Tipo de recurso")); layout.addView(spinnerType)
         layout.addView(label("ID del recurso *")); layout.addView(etResourceId)
-        layout.addView(label("Fecha *")); layout.addView(etDate)
+        layout.addView(label("Fecha inicio *")); layout.addView(etDate)
         layout.addView(label("Hora inicio *")); layout.addView(etStart)
+        layout.addView(label("Fecha devolución *")); layout.addView(etEndDate)
         layout.addView(label("Hora fin *")); layout.addView(etEnd)
         layout.addView(label("Motivo *")); layout.addView(etPurpose)
-        layout.addView(label("Observaciones")); layout.addView(etObs)
 
         val sv = ScrollView(ctx).apply { addView(layout) }
 
-        AlertDialog.Builder(ctx)
-            .setTitle("Crear reservación")
-            .setView(sv)
+        AlertDialog.Builder(ctx).setTitle("Crear reservación").setView(sv)
             .setPositiveButton("Crear") { _, _ ->
                 val requesterId = etRequesterId.text.toString().toLongOrNull()
                 val resourceId = etResourceId.text.toString().toLongOrNull()
                 val date = etDate.text.toString().trim()
                 val start = etStart.text.toString().trim()
+                val endDate = etEndDate.text.toString().trim()
                 val end = etEnd.text.toString().trim()
                 val purpose = etPurpose.text.toString().trim()
 
@@ -127,49 +123,46 @@ class ReservationsFragment : Fragment() {
                     Toast.makeText(ctx, "Completa todos los campos requeridos", Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
-                val selectedType = typeValues[spinnerType.selectedItemPosition]
                 lifecycleScope.launch {
                     try {
-                        val api = RetrofitClient.create(ctx)
-                        val req = CreateReservationRequest(
-                            requesterId = requesterId,
-                            resourceType = selectedType,
-                            spaceId = if (selectedType == "SPACE") resourceId else null,
-                            equipmentId = if (selectedType == "EQUIPMENT") resourceId else null,
-                            reservationDate = date,
-                            startTime = start,
-                            endTime = end,
-                            purpose = purpose,
-                            observations = etObs.text.toString().trim().ifEmpty { null }
+                        val resp = RetrofitClient.create(ctx).createReservation(
+                            CreateReservationRequest(requesterId, typeValues[spinnerType.selectedItemPosition],
+                                resourceId, date, start, endDate.ifBlank { date }, end, purpose, null)
                         )
-                        val resp = api.createReservation(req)
-                        if (resp.isSuccessful) {
-                            Toast.makeText(ctx, "Reservación creada", Toast.LENGTH_SHORT).show(); load()
-                        } else Toast.makeText(ctx, "Error: ${resp.code()}", Toast.LENGTH_SHORT).show()
+                        if (resp.isSuccessful) { Toast.makeText(ctx, "Reservación creada", Toast.LENGTH_SHORT).show(); load() }
+                        else Toast.makeText(ctx, "Error al crear", Toast.LENGTH_SHORT).show()
                     } catch (_: Exception) { Toast.makeText(ctx, "Error de conexión", Toast.LENGTH_SHORT).show() }
                 }
-            }
-            .setNegativeButton("Cancelar", null).show()
+            }.setNegativeButton("Cancelar", null).show()
     }
 
     private fun showViewReservationDialog(r: Reservation) {
-        val resourceName = if (r.resourceType == "SPACE") r.spaceName else r.equipmentName
-        val resourceType = if (r.resourceType == "SPACE") "Espacio" else "Equipo"
-        val msg = """
-            Solicitante: ${r.requesterName ?: "—"} (${r.requesterEmail ?: "—"})
-            Tipo: $resourceType
-            Recurso: ${resourceName ?: "—"}
-            Fecha: ${r.reservationDate}
-            Horario: ${r.startTime} - ${r.endTime}
-            Estado: ${r.status}
-            Motivo: ${r.purpose}
-            Observaciones: ${r.observations ?: "—"}
-            Comentario admin: ${r.adminComment ?: "—"}
-        """.trimIndent()
-        AlertDialog.Builder(requireContext())
-            .setTitle("Detalle de reservación #${r.id}")
-            .setMessage(msg)
-            .setPositiveButton("Cerrar", null).show()
+        // Cargar detalle completo
+        lifecycleScope.launch {
+            try {
+                val resp = RetrofitClient.create(requireContext()).getReservation(r.id)
+                if (resp.isSuccessful) {
+                    val d = resp.body() ?: return@launch
+                    val msg = """
+                        Solicitante: ${d.requesterName ?: "—"}
+                        Correo: ${d.requesterEmail ?: "—"}
+                        Tipo: ${if (d.resourceType == "SPACE") "Espacio" else "Equipo"}
+                        Recurso: ${d.resourceName ?: "—"}
+                        Fecha inicio: ${d.reservationDate}
+                        Hora inicio: ${d.startTime ?: "—"}
+                        Fecha devolución: ${d.endDate ?: d.reservationDate}
+                        Hora fin: ${d.endTime ?: "—"}
+                        Estado: ${d.status}
+                        Motivo: ${d.purpose ?: "—"}
+                        Observaciones: ${d.observations ?: "—"}
+                        Comentario admin: ${d.adminComment ?: "—"}
+                        ${if (d.returnCondition != null) "Devolución: ${d.returnCondition}" else ""}
+                        ${if (d.returnDescription != null) "Desc. devolución: ${d.returnDescription}" else ""}
+                    """.trimIndent()
+                    AlertDialog.Builder(requireContext()).setTitle("Detalle #${d.id}").setMessage(msg).setPositiveButton("Cerrar", null).show()
+                }
+            } catch (_: Exception) { Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show() }
+        }
     }
 
     private fun setupSpinner(spinner: Spinner, labels: Array<String>, onSelect: (Int) -> Unit) {
@@ -198,7 +191,7 @@ class ReservationsFragment : Fragment() {
                     totalPages = page.totalPages.coerceAtLeast(1)
                     binding.tvPage.text = "Pág ${currentPage + 1} / $totalPages"
                     val filtered = if (requesterSearch.isEmpty()) page.content
-                        else page.content.filter { (it.requesterName ?: "").contains(requesterSearch, ignoreCase = true) }
+                    else page.content.filter { (it.requesterName ?: "").contains(requesterSearch, ignoreCase = true) }
                     binding.recyclerView.adapter = ReservationAdapter(filtered) { action, reservation ->
                         when (action) {
                             "approve" -> showApproveDialog(reservation)
@@ -210,90 +203,62 @@ class ReservationsFragment : Fragment() {
                 }
             } catch (_: Exception) {
                 Toast.makeText(requireContext(), "Error al cargar reservaciones", Toast.LENGTH_SHORT).show()
-            } finally {
-                binding.progressBar.visibility = View.GONE
-            }
+            } finally { binding.progressBar.visibility = View.GONE }
         }
     }
 
     private fun showApproveDialog(r: Reservation) {
-        val input = EditText(requireContext()).apply { hint = "Comentario (opcional)" }
         AlertDialog.Builder(requireContext())
             .setTitle("Aprobar reservación")
             .setMessage("¿Aprobar la reserva de ${r.requesterName}?")
-            .setView(input)
             .setPositiveButton("Aprobar") { _, _ ->
                 lifecycleScope.launch {
                     try {
-                        RetrofitClient.create(requireContext()).approveReservation(r.id, ApproveRequest(input.text.toString().ifBlank { null }))
-                        Toast.makeText(requireContext(), "Reservación aprobada", Toast.LENGTH_SHORT).show()
-                        load()
-                    } catch (_: Exception) {}
+                        RetrofitClient.create(requireContext()).approveReservation(r.id, ApproveRequest(null))
+                        Toast.makeText(requireContext(), "Reservación aprobada", Toast.LENGTH_SHORT).show(); load()
+                    } catch (_: Exception) { Toast.makeText(requireContext(), "Error", Toast.LENGTH_SHORT).show() }
                 }
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
+            }.setNegativeButton("Cancelar", null).show()
     }
 
     private fun showRejectDialog(r: Reservation) {
-        val input = EditText(requireContext()).apply { hint = "Motivo de rechazo (requerido)" }
-        AlertDialog.Builder(requireContext())
-            .setTitle("Rechazar reservación")
-            .setView(input)
+        val input = EditText(requireContext()).apply { hint = "Motivo de rechazo (requerido)"; setPadding(48, 16, 48, 0) }
+        AlertDialog.Builder(requireContext()).setTitle("Rechazar reservación").setView(input)
             .setPositiveButton("Rechazar") { _, _ ->
                 val reason = input.text.toString().trim()
-                if (reason.length < 10) {
-                    Toast.makeText(requireContext(), "El motivo debe tener al menos 10 caracteres", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
+                if (reason.length < 10) { Toast.makeText(requireContext(), "Mínimo 10 caracteres", Toast.LENGTH_SHORT).show(); return@setPositiveButton }
                 lifecycleScope.launch {
                     try {
                         RetrofitClient.create(requireContext()).rejectReservation(r.id, RejectRequest(reason))
-                        Toast.makeText(requireContext(), "Reservación rechazada", Toast.LENGTH_SHORT).show()
-                        load()
-                    } catch (_: Exception) {}
+                        Toast.makeText(requireContext(), "Reservación rechazada", Toast.LENGTH_SHORT).show(); load()
+                    } catch (_: Exception) { Toast.makeText(requireContext(), "Error", Toast.LENGTH_SHORT).show() }
                 }
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
+            }.setNegativeButton("Cancelar", null).show()
     }
 
     private fun showReturnDialog(r: Reservation) {
         val conditions = arrayOf("BUEN_ESTADO", "DAÑADO")
         var selectedCondition = "BUEN_ESTADO"
-        val layout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(48, 16, 48, 0)
-        }
+        val layout = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL; setPadding(48, 16, 48, 0) }
         val spinnerCondition = Spinner(requireContext()).apply {
-            adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, conditions).apply {
-                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            }
+            adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, conditions).apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
             onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) { selectedCondition = conditions[pos] }
                 override fun onNothingSelected(p: AdapterView<*>?) {}
             }
         }
-        val inputDesc = EditText(requireContext()).apply { hint = "Descripción (opcional)" }
-        layout.addView(spinnerCondition)
-        layout.addView(inputDesc)
+        val inputDesc = EditText(requireContext()).apply { hint = "Descripción del daño (si aplica)" }
+        layout.addView(spinnerCondition); layout.addView(inputDesc)
 
-        AlertDialog.Builder(requireContext())
-            .setTitle("Registrar devolución")
-            .setView(layout)
+        AlertDialog.Builder(requireContext()).setTitle("Registrar devolución").setView(layout)
             .setPositiveButton("Registrar") { _, _ ->
                 lifecycleScope.launch {
                     try {
-                        RetrofitClient.create(requireContext()).returnReservation(
-                            r.id, ReturnRequest(selectedCondition, inputDesc.text.toString().ifBlank { null })
-                        )
-                        Toast.makeText(requireContext(), "Devolución registrada", Toast.LENGTH_SHORT).show()
-                        load()
-                    } catch (_: Exception) {}
+                        RetrofitClient.create(requireContext()).returnReservation(r.id, ReturnRequest(selectedCondition, inputDesc.text.toString().ifBlank { null }))
+                        Toast.makeText(requireContext(), "Devolución registrada", Toast.LENGTH_SHORT).show(); load()
+                    } catch (_: Exception) { Toast.makeText(requireContext(), "Error", Toast.LENGTH_SHORT).show() }
                 }
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
+            }.setNegativeButton("Cancelar", null).show()
     }
 
     override fun onDestroyView() { super.onDestroyView(); _binding = null }
@@ -314,21 +279,13 @@ class ReservationAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val r = items[position]
         holder.view.apply {
-            findViewById<TextView>(R.id.tvRequester).text = r.requesterName ?: r.requesterEmail ?: "—"
-            val resourceName = if (r.resourceType == "SPACE") r.spaceName else r.equipmentName
-            findViewById<TextView>(R.id.tvResource).text = "${r.resourceType}: ${resourceName ?: "—"}"
-            findViewById<TextView>(R.id.tvDate).text = "${r.reservationDate} | ${r.startTime} - ${r.endTime}"
+            findViewById<TextView>(R.id.tvRequester).text = r.requesterName ?: "—"
+            findViewById<TextView>(R.id.tvResource).text = "${if (r.resourceType == "SPACE") "Espacio" else "Equipo"}: ${r.resourceName ?: "—"}"
+            findViewById<TextView>(R.id.tvDate).text = "${r.reservationDate} | ${r.schedule ?: ""}"
 
             val tvStatus = findViewById<TextView>(R.id.tvStatus)
-            tvStatus.text = r.status
-            val color = when (r.status) {
-                "PENDIENTE" -> 0xFFF59E0B.toInt()
-                "APROBADA" -> 0xFF10B981.toInt()
-                "RECHAZADA" -> 0xFFEF4444.toInt()
-                "CANCELADA" -> 0xFF6B7280.toInt()
-                else -> 0xFF6B7280.toInt()
-            }
-            tvStatus.setBackgroundColor(color)
+            tvStatus.text = when (r.status) { "PENDIENTE" -> "Pendiente"; "APROBADA" -> "En préstamo"; "RECHAZADA" -> "Rechazada"; "DEVUELTA" -> "Devuelta"; else -> "Cancelada" }
+            tvStatus.setBackgroundColor(when (r.status) { "PENDIENTE" -> 0xFFF59E0B.toInt(); "APROBADA" -> 0xFF3B82F6.toInt(); "RECHAZADA" -> 0xFFEF4444.toInt(); "DEVUELTA" -> 0xFF10B981.toInt(); else -> 0xFF6B7280.toInt() })
 
             val layoutActions = findViewById<LinearLayout>(R.id.layoutActions)
             val btnApprove = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnApprove)
@@ -336,26 +293,12 @@ class ReservationAdapter(
             val btnReturn = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnReturn)
 
             when (r.status) {
-                "PENDIENTE" -> {
-                    layoutActions.visibility = View.VISIBLE
-                    btnReturn.visibility = View.GONE
-                    btnApprove.setOnClickListener { onAction("approve", r) }
-                    btnReject.setOnClickListener { onAction("reject", r) }
-                }
-                "APROBADA" -> {
-                    layoutActions.visibility = View.GONE
-                    btnReturn.visibility = View.VISIBLE
-                    btnReturn.setOnClickListener { onAction("return", r) }
-                }
-                else -> {
-                    layoutActions.visibility = View.GONE
-                    btnReturn.visibility = View.GONE
-                }
+                "PENDIENTE" -> { layoutActions.visibility = View.VISIBLE; btnReturn.visibility = View.GONE; btnApprove.setOnClickListener { onAction("approve", r) }; btnReject.setOnClickListener { onAction("reject", r) } }
+                "APROBADA" -> { layoutActions.visibility = View.GONE; btnReturn.visibility = View.VISIBLE; btnReturn.setOnClickListener { onAction("return", r) } }
+                else -> { layoutActions.visibility = View.GONE; btnReturn.visibility = View.GONE }
             }
 
-            findViewById<com.google.android.material.button.MaterialButton>(R.id.btnViewDetail)
-                .setOnClickListener { onAction("view", r) }
-            // Hide student-only buttons in admin view
+            findViewById<com.google.android.material.button.MaterialButton>(R.id.btnViewDetail).setOnClickListener { onAction("view", r) }
             findViewById<com.google.android.material.button.MaterialButton>(R.id.btnEditReservation).visibility = View.GONE
             findViewById<com.google.android.material.button.MaterialButton>(R.id.btnViewRejection).visibility = View.GONE
         }

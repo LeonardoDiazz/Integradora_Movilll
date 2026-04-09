@@ -31,17 +31,15 @@ class ProfileFragment : Fragment() {
         val initial = session.userName?.firstOrNull()?.uppercaseChar()?.toString() ?: "U"
         val roleLabel = when (session.userRole) {
             "ADMIN" -> "Administrador"
-            "STAFF" -> "Personal"
+            "STAFF" -> "Personal UTEZ"
             else -> "Estudiante"
         }
 
-        // Header
         binding.tvAvatar.text = initial
         binding.tvName.text = fullName
         binding.tvRole.text = roleLabel
         binding.tvEmail.text = session.userEmail
 
-        // Grid de datos
         binding.tvNameValue.text = session.userName ?: "—"
         binding.tvLastNameValue.text = session.userLastName ?: "—"
         binding.tvEmailValue.text = session.userEmail ?: "—"
@@ -68,7 +66,7 @@ class ProfileFragment : Fragment() {
                     val api = RetrofitClient.create(requireContext())
                     val response = api.updateProfile(
                         session.userId,
-                        UpdateProfileRequest(session.userName ?: "", session.userLastName ?: "", phone.ifBlank { null })
+                        UpdateProfileRequest(phone.ifBlank { null })
                     )
                     if (response.isSuccessful) {
                         binding.tvPhoneValue.text = phone.ifBlank { "Sin teléfono registrado" }
@@ -79,8 +77,8 @@ class ProfileFragment : Fragment() {
                     } else {
                         Toast.makeText(requireContext(), "Error al actualizar", Toast.LENGTH_LONG).show()
                     }
-                } catch (e: Exception) {
-                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                } catch (_: Exception) {
+                    Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -99,25 +97,25 @@ class ProfileFragment : Fragment() {
         }
         binding.btnChangePass.setOnClickListener {
             val current = binding.etCurrentPass.text?.toString()?.trim() ?: ""
-            val new = binding.etNewPass.text?.toString()?.trim() ?: ""
+            val new1 = binding.etNewPass.text?.toString()?.trim() ?: ""
             val confirm = binding.etConfirmPass.text?.toString()?.trim() ?: ""
 
-            if (current.isEmpty() || new.isEmpty() || confirm.isEmpty()) {
+            if (current.isEmpty() || new1.isEmpty() || confirm.isEmpty()) {
                 Toast.makeText(requireContext(), "Completa todos los campos", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (new.length < 8) {
+            if (new1.length < 8) {
                 Toast.makeText(requireContext(), "Mínimo 8 caracteres", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (new != confirm) {
+            if (new1 != confirm) {
                 Toast.makeText(requireContext(), "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             lifecycleScope.launch {
                 try {
                     val api = RetrofitClient.create(requireContext())
-                    val response = api.changePassword(session.userId, ChangePasswordRequest(current, new, confirm))
+                    val response = api.changePassword(session.userId, ChangePasswordRequest(current, new1, confirm))
                     if (response.isSuccessful) {
                         binding.layoutEditPass.visibility = View.GONE
                         binding.btnEditPass.visibility = View.VISIBLE
@@ -128,8 +126,8 @@ class ProfileFragment : Fragment() {
                     } else {
                         Toast.makeText(requireContext(), "Error al cambiar contraseña", Toast.LENGTH_LONG).show()
                     }
-                } catch (e: Exception) {
-                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                } catch (_: Exception) {
+                    Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_LONG).show()
                 }
             }
         }

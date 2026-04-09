@@ -10,8 +10,10 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    // Para emulador usa 10.0.2.2, para dispositivo físico pon la IP de tu PC
-    private const val BASE_URL = "http://192.168.0.52:8080/"
+    // IMPORTANTE: Cambia esta IP por la de tu computadora
+    // Corre "hostname -I" en tu terminal para obtenerla
+    // Ejemplo: "http://192.168.1.45:8080/"
+    private const val BASE_URL = "http://10.151.1.110:8080/"
 
     fun create(context: Context): ApiService {
         val session = SessionManager(context)
