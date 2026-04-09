@@ -117,7 +117,7 @@ class SpacesFragment : Fragment() {
         lifecycleScope.launch {
             try {
                 val api = RetrofitClient.create(requireContext())
-                val response = api.getSpaces(currentPage, 10, backendFilter, "")
+                val response = api.getSpaces(currentPage, 4, backendFilter, "")
                 if (response.isSuccessful) {
                     val page = response.body() ?: return@launch
                     totalPages = page.totalPages.coerceAtLeast(1)

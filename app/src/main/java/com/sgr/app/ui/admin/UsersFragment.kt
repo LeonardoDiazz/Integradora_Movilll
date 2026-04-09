@@ -99,7 +99,7 @@ class UsersFragment : Fragment() {
         lifecycleScope.launch {
             try {
                 val api = RetrofitClient.create(requireContext())
-                val response = api.getUsers(currentPage, 10, filter, "")
+                val response = api.getUsers(currentPage, 4, filter, "")
                 if (response.isSuccessful) {
                     val page = response.body() ?: return@launch
                     totalPages = page.totalPages.coerceAtLeast(1)
