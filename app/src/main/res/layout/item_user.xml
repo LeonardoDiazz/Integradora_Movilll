@@ -15,7 +15,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Fila 1: Matrícula + Nombre + Estado badge -->
+        <!-- Avatar + Nombre + Estado -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -23,7 +23,6 @@
             android:gravity="center_vertical"
             android:layout_marginBottom="6dp">
 
-            <!-- Avatar con inicial -->
             <TextView
                 android:id="@+id/tvAvatar"
                 android:layout_width="40dp"
@@ -58,7 +57,6 @@
                     android:layout_marginTop="1dp"/>
             </LinearLayout>
 
-            <!-- Estado badge -->
             <TextView
                 android:id="@+id/tvStatus"
                 android:layout_width="wrap_content"
@@ -84,7 +82,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginBottom="6dp">
+            android:layout_marginBottom="8dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -93,7 +91,7 @@
                 android:textSize="11sp"
                 android:textColor="@color/gray_text"
                 android:textStyle="bold"
-                android:minWidth="72dp"
+                android:minWidth="56dp"
                 android:layout_marginEnd="8dp"/>
 
             <TextView
@@ -105,77 +103,43 @@
                 android:textColor="@color/text_primary"/>
         </LinearLayout>
 
-        <!-- Rol + Tipo en fila -->
+        <!-- Rol -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:layout_marginBottom="12dp">
 
-            <!-- Rol -->
-            <LinearLayout
-                android:layout_width="0dp"
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:text="Rol"
+                android:textSize="11sp"
+                android:textColor="@color/gray_text"
+                android:textStyle="bold"
+                android:minWidth="56dp"
+                android:layout_marginEnd="8dp"/>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Rol"
-                    android:textSize="11sp"
-                    android:textColor="@color/gray_text"
-                    android:textStyle="bold"
-                    android:minWidth="72dp"
-                    android:layout_marginEnd="8dp"/>
-
-                <TextView
-                    android:id="@+id/tvRole"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="3dp"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/white"
-                    android:background="@drawable/bg_status_pending"/>
-            </LinearLayout>
-
-            <!-- Tipo -->
-            <LinearLayout
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/tvRole"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Tipo"
-                    android:textSize="11sp"
-                    android:textColor="@color/gray_text"
-                    android:textStyle="bold"
-                    android:layout_marginEnd="6dp"/>
-
-                <TextView
-                    android:id="@+id/tvUserType"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="13sp"
-                    android:textColor="@color/text_primary"/>
-            </LinearLayout>
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:background="@drawable/bg_status_pending"/>
         </LinearLayout>
 
-        <!-- Botones de acción -->
+        <!-- Botones -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <!-- Ícono Ver -->
             <ImageButton
                 android:id="@+id/btnView"
                 android:layout_width="38dp"
@@ -187,7 +151,6 @@
                 android:padding="7dp"
                 android:scaleType="fitCenter"/>
 
-            <!-- Ícono Editar -->
             <ImageButton
                 android:id="@+id/btnEdit"
                 android:layout_width="38dp"
@@ -199,14 +162,15 @@
                 android:padding="7dp"
                 android:scaleType="fitCenter"/>
 
-            <com.google.android.material.button.MaterialButton
+            <ImageButton
                 android:id="@+id/btnToggle"
-                android:layout_width="0dp"
-                android:layout_height="34dp"
-                android:layout_weight="1"
-                android:text="Activar"
-                android:textSize="11sp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:src="@drawable/ic_power"
+                android:background="@drawable/bg_icon_btn_red"
+                android:contentDescription="Activar / Desactivar"
+                android:padding="7dp"
+                android:scaleType="fitCenter"/>
 
         </LinearLayout>
 

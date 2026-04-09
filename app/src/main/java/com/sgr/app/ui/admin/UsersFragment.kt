@@ -458,21 +458,10 @@ class UserAdapter(
             tvRole.text = if (isAdmin) "Administrador" else "Usuario solicitante"
             tvRole.setBackgroundColor(if (isAdmin) 0xFF7C3AED.toInt() else 0xFF2563EB.toInt())
 
-            // Tipo
-            val tipoLabel = when (u.userType) {
-                "ESTUDIANTE" -> "Estudiante"
-                "STAFF" -> "Personal"
-                else -> "—"
-            }
-            findViewById<TextView>(R.id.tvUserType).text = tipoLabel
-
             // Botones
             findViewById<android.widget.ImageButton>(R.id.btnView).setOnClickListener { onView(u) }
             findViewById<android.widget.ImageButton>(R.id.btnEdit).setOnClickListener { onEdit(u) }
-
-            val btnToggle = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnToggle)
-            btnToggle.text = if (u.active) "Desactivar" else "Activar"
-            btnToggle.setOnClickListener { onToggle(u) }
+            findViewById<android.widget.ImageButton>(R.id.btnToggle).setOnClickListener { onToggle(u) }
         }
     }
 }
