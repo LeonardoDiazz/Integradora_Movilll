@@ -172,18 +172,20 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-            <com.google.android.material.button.MaterialButton
+            <!-- Ícono Ver -->
+            <ImageButton
                 android:id="@+id/btnView"
-                android:layout_width="0dp"
-                android:layout_height="34dp"
-                android:layout_weight="1"
-                android:layout_marginEnd="4dp"
-                android:text="Ver"
-                android:textSize="11sp"
-                android:backgroundTint="#1D4ED8"
-                style="@style/Widget.MaterialComponents.Button"/>
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginEnd="8dp"
+                android:src="@drawable/ic_eye"
+                android:background="@drawable/bg_icon_btn"
+                android:contentDescription="Ver detalle"
+                android:padding="7dp"
+                android:scaleType="fitCenter"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnEdit"

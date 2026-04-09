@@ -237,22 +237,109 @@ class UsersFragment : Fragment() {
     }
 
     private fun showViewUserDialog(user: User) {
-        val rolLabel = if (user.role == "ADMIN") "Administrador" else "Usuario solicitante"
-        val active = if (user.active) "Activo" else "Inactivo"
-        val msg = """
-            Nombre: ${user.name} ${user.lastName}
-            Correo: ${user.email}
-            Matrícula/ID: ${user.identifier ?: "—"}
-            Teléfono: ${user.phone ?: "—"}
-            Rol: $rolLabel
-            Tipo: ${user.userType ?: "—"}
-            Fecha nacimiento: ${user.birthDate ?: "—"}
-            Estado: $active
-        """.trimIndent()
-        AlertDialog.Builder(requireContext())
-            .setTitle("Detalle del usuario")
-            .setMessage(msg)
-            .setPositiveButton("Cerrar", null).show()
+        val ctx = requireContext()
+        val rolLabel = if (user.role == "ADMIN") "Administrador" else "Solicitante"
+        val tipoLabel = when (user.userType) {
+            "ESTUDIANTE" -> "Estudiante"
+            "STAFF" -> "Personal"
+            else -> "—"
+        }
+        val activeLabel = if (user.active) "Activo" else "Inactivo"
+
+        val scroll = ScrollView(ctx)
+        val root = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 24, 48, 8)
+        }
+
+        fun field(label: String, value: String) {
+            val container = LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(0xFFF8FAFC.toInt())
+                    cornerRadius = 12f * ctx.resources.displayMetrics.density
+                }
+                setPadding(24, 14, 24, 14)
+                val lp = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                lp.bottomMargin = (8 * ctx.resources.displayMetrics.density).toInt()
+                layoutParams = lp
+            }
+            val tvLabel = TextView(ctx).apply {
+                text = label.uppercase()
+                textSize = 10f
+                setTextColor(0xFF6B7280.toInt())
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+            }
+            val tvValue = TextView(ctx).apply {
+                text = value
+                textSize = 14f
+                setTextColor(0xFF111827.toInt())
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+                setPadding(0, 4, 0, 0)
+            }
+            container.addView(tvLabel)
+            container.addView(tvValue)
+            root.addView(container)
+        }
+
+        // Fila doble (2 columnas)
+        fun rowOf2(label1: String, val1: String, label2: String, val2: String) {
+            val row = LinearLayout(ctx).apply {
+                orientation = LinearLayout.HORIZONTAL
+                val lp = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                lp.bottomMargin = (8 * ctx.resources.displayMetrics.density).toInt()
+                layoutParams = lp
+            }
+            fun cell(label: String, value: String): LinearLayout {
+                val container = LinearLayout(ctx).apply {
+                    orientation = LinearLayout.VERTICAL
+                    background = android.graphics.drawable.GradientDrawable().apply {
+                        setColor(0xFFF8FAFC.toInt())
+                        cornerRadius = 12f * ctx.resources.displayMetrics.density
+                    }
+                    setPadding(24, 14, 24, 14)
+                    val lp2 = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    layoutParams = lp2
+                }
+                container.addView(TextView(ctx).apply {
+                    text = label.uppercase(); textSize = 10f
+                    setTextColor(0xFF6B7280.toInt()); typeface = android.graphics.Typeface.DEFAULT_BOLD
+                })
+                container.addView(TextView(ctx).apply {
+                    text = value; textSize = 14f
+                    setTextColor(0xFF111827.toInt()); typeface = android.graphics.Typeface.DEFAULT_BOLD
+                    setPadding(0, 4, 0, 0)
+                })
+                return container
+            }
+            val cell1 = cell(label1, val1)
+            val cell2 = cell(label2, val2)
+            val gapLp = LinearLayout.LayoutParams((8 * ctx.resources.displayMetrics.density).toInt(), 1)
+            row.addView(cell1)
+            row.addView(android.view.View(ctx).apply { layoutParams = gapLp })
+            row.addView(cell2)
+            root.addView(row)
+        }
+
+        rowOf2("Nombre", user.name, "Apellidos", user.lastName)
+        rowOf2("Fecha de nacimiento", user.birthDate ?: "—", "Rol", rolLabel)
+        rowOf2("Tipo de usuario", tipoLabel, "Matrícula / ID", user.identifier ?: "—")
+        rowOf2("Correo", user.email, "Teléfono", user.phone ?: "—")
+        field("Estado", activeLabel)
+
+        scroll.addView(root)
+
+        AlertDialog.Builder(ctx)
+            .setTitle("Detalle de Usuario")
+            .setView(scroll)
+            .setPositiveButton("Cerrar", null)
+            .show()
     }
 
     override fun onDestroyView() { super.onDestroyView(); _binding = null }
@@ -306,7 +393,7 @@ class UserAdapter(
             findViewById<TextView>(R.id.tvUserType).text = tipoLabel
 
             // Botones
-            findViewById<com.google.android.material.button.MaterialButton>(R.id.btnView).setOnClickListener { onView(u) }
+            findViewById<android.widget.ImageButton>(R.id.btnView).setOnClickListener { onView(u) }
             findViewById<com.google.android.material.button.MaterialButton>(R.id.btnEdit).setOnClickListener { onEdit(u) }
 
             val btnToggle = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnToggle)
