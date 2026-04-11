@@ -60,8 +60,8 @@ interface ApiService {
     @PATCH("api/spaces/{id}/toggle-status")
     suspend fun toggleSpaceStatus(@Path("id") id: Long): Response<ResponseBody>
 
-    @GET("api/spaces/{id}/history")
-    suspend fun getSpaceHistory(@Path("id") id: Long): Response<List<HistoryItem>>
+    @GET("api/reservations/by-space/{spaceId}")
+    suspend fun getSpaceHistory(@Path("spaceId") id: Long): Response<List<Reservation>>
 
     // EQUIPMENT
     @GET("api/equipments")
@@ -79,13 +79,13 @@ interface ApiService {
     suspend fun createEquipment(@Body request: CreateEquipmentRequest): Response<ResponseBody>
 
     @PUT("api/equipments/{id}")
-    suspend fun updateEquipment(@Path("id") id: Long, @Body request: CreateEquipmentRequest): Response<ResponseBody>
+    suspend fun updateEquipment(@Path("id") id: Long, @Body request: UpdateEquipmentRequest): Response<ResponseBody>
 
     @PATCH("api/equipments/{id}/toggle-status")
     suspend fun toggleEquipmentStatus(@Path("id") id: Long): Response<ResponseBody>
 
-    @GET("api/equipments/{id}/history")
-    suspend fun getEquipmentHistory(@Path("id") id: Long): Response<List<HistoryItem>>
+    @GET("api/reservations/by-equipment/{equipmentId}")
+    suspend fun getEquipmentHistory(@Path("equipmentId") id: Long): Response<List<Reservation>>
 
     // RESERVATIONS (admin)
     @GET("api/reservations")
@@ -99,13 +99,13 @@ interface ApiService {
     suspend fun getReservation(@Path("id") id: Long): Response<Reservation>
 
     @PATCH("api/reservations/{id}/approve")
-    suspend fun approveReservation(@Path("id") id: Long, @Body body: ApproveRequest): Response<Reservation>
+    suspend fun approveReservation(@Path("id") id: Long, @Body body: ApproveRequest): Response<ResponseBody>
 
     @PATCH("api/reservations/{id}/reject")
-    suspend fun rejectReservation(@Path("id") id: Long, @Body body: RejectRequest): Response<Reservation>
+    suspend fun rejectReservation(@Path("id") id: Long, @Body body: RejectRequest): Response<ResponseBody>
 
     @PATCH("api/reservations/{id}/return")
-    suspend fun returnReservation(@Path("id") id: Long, @Body body: ReturnRequest): Response<Reservation>
+    suspend fun returnReservation(@Path("id") id: Long, @Body body: ReturnRequest): Response<ResponseBody>
 
     // RESERVATIONS (user)
     @GET("api/reservations/my")
@@ -123,7 +123,7 @@ interface ApiService {
     ): Response<Reservation>
 
     @POST("api/reservations")
-    suspend fun createReservation(@Body request: CreateReservationRequest): Response<Reservation>
+    suspend fun createReservation(@Body request: CreateReservationRequest): Response<ResponseBody>
 
     @PUT("api/reservations/my/{id}")
     suspend fun updateMyReservation(
@@ -136,7 +136,7 @@ interface ApiService {
     suspend fun cancelMyReservation(
         @Path("id") id: Long,
         @Query("userId") userId: Long
-    ): Response<Reservation>
+    ): Response<ResponseBody>
 
     // PROFILE
     @PUT("api/users/profile/{userId}")

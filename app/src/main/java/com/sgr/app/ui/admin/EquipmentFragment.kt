@@ -13,7 +13,9 @@ import com.sgr.app.R
 import com.sgr.app.databinding.FragmentEquipmentBinding
 import com.sgr.app.model.CreateEquipmentRequest
 import com.sgr.app.model.Equipment
-import com.sgr.app.model.HistoryItem
+import com.sgr.app.model.Reservation
+import com.sgr.app.model.Space
+import com.sgr.app.model.UpdateEquipmentRequest
 import com.sgr.app.network.RetrofitClient
 import kotlinx.coroutines.launch
 
@@ -78,7 +80,7 @@ class EquipmentFragment : Fragment() {
             load()
         }
 
-        binding.btnAddEquipment.setOnClickListener { showCreateEquipmentDialog() }
+
 
         binding.btnPrev.setOnClickListener { if (currentPage > 0) { currentPage--; load() } }
         binding.btnNext.setOnClickListener { if (currentPage < totalPages - 1) { currentPage++; load() } }
@@ -212,79 +214,219 @@ class EquipmentFragment : Fragment() {
             .setNegativeButton("Cancelar", null).show()
     }
 
-    private fun showEditEquipmentDialog(eq: Equipment) {
-        val (view, buildRequest) = buildEquipmentForm(eq)
-        AlertDialog.Builder(requireContext())
-            .setTitle("Editar equipo")
+    private fun showEditEquipmentDialog(eqPreview: Equipment) {
+        val ctx = requireContext()
+        val view = LayoutInflater.from(ctx).inflate(R.layout.dialog_equipment_edit, null)
+
+        val etInvNumber   = view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etEditInvNumber)
+        val etName        = view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etEditName)
+        val etDescription = view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etEditDescription)
+        val actvCategory  = view.findViewById<AutoCompleteTextView>(R.id.actvEditCategory)
+        val actvSpace     = view.findViewById<AutoCompleteTextView>(R.id.actvEditSpace)
+        val cbStudents    = view.findViewById<android.widget.CheckBox>(R.id.cbEditAllowStudents)
+
+        // Listas de tipo/categoría
+        val catLabels = arrayOf("Cómputo", "Audiovisual", "Laboratorio")
+        val catValues = arrayOf("COMPUTO", "AUDIOVISUAL", "LABORATORIO")
+        actvCategory.setAdapter(ArrayAdapter(ctx, android.R.layout.simple_dropdown_item_1line, catLabels))
+
+        // Pre-llenar con datos del listado
+        etInvNumber.setText(eqPreview.inventoryNumber)
+        etName.setText(eqPreview.name)
+        etDescription.setText(eqPreview.description)
+        cbStudents.isChecked = eqPreview.allowStudents ?: true
+        val catIdx = catValues.indexOfFirst { it == eqPreview.category }.coerceAtLeast(0)
+        actvCategory.setText(catLabels[catIdx], false)
+
+        // Placeholder mientras cargan espacios
+        actvSpace.setText("Cargando...", false)
+
+        val dialog = AlertDialog.Builder(ctx)
             .setView(view)
-            .setPositiveButton("Guardar") { _, _ ->
-                val req = buildRequest() ?: return@setPositiveButton
+            .create()
+        dialog.window?.setLayout(
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+
+        view.findViewById<TextView>(R.id.btnEditEquipClose).setOnClickListener  { dialog.dismiss() }
+        view.findViewById<TextView>(R.id.btnEditEquipCancel).setOnClickListener { dialog.dismiss() }
+
+        // Lista de espacios y datos completos del equipo
+        var spacesList: List<Space> = emptyList()
+        var currentCondition = eqPreview.equipmentCondition ?: "DISPONIBLE"
+        var selectedSpaceId: Long? = eqPreview.spaceId
+
+        lifecycleScope.launch {
+            try {
+                val api = RetrofitClient.create(ctx)
+
+                // Cargar datos completos del equipo (para spaceId y condition)
+                val eqResp = api.getEquipment(eqPreview.id)
+                val fullEq = if (eqResp.isSuccessful) eqResp.body() ?: eqPreview else eqPreview
+                currentCondition = fullEq.equipmentCondition ?: "DISPONIBLE"
+                selectedSpaceId  = fullEq.spaceId
+                etInvNumber.setText(fullEq.inventoryNumber)
+                etName.setText(fullEq.name)
+                etDescription.setText(fullEq.description)
+                cbStudents.isChecked = fullEq.allowStudents ?: true
+                val idx = catValues.indexOfFirst { it == fullEq.category }.coerceAtLeast(0)
+                actvCategory.setText(catLabels[idx], false)
+
+                // Cargar espacios para el dropdown
+                val spacesResp = api.getSpaces(0, 100, "", "")
+                if (spacesResp.isSuccessful) {
+                    spacesList = spacesResp.body()?.content ?: emptyList()
+                    val spaceLabels = mutableListOf("Sin espacio asociado")
+                    spaceLabels.addAll(spacesList.map { it.name })
+                    actvSpace.setAdapter(ArrayAdapter(ctx, android.R.layout.simple_dropdown_item_1line, spaceLabels))
+
+                    val currentSpace = spacesList.find { it.id == fullEq.spaceId }
+                    actvSpace.setText(currentSpace?.name ?: "Sin espacio asociado", false)
+                }
+            } catch (_: Exception) {
+                actvSpace.setText("Sin espacio asociado", false)
+            }
+        }
+
+        view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnEditEquipSave)
+            .setOnClickListener {
+                val inv  = etInvNumber.text.toString().trim()
+                val name = etName.text.toString().trim()
+                val desc = etDescription.text.toString().trim()
+
+                if (inv.isEmpty() || inv.length < 3) {
+                    Toast.makeText(ctx, "El número de inventario debe tener al menos 3 caracteres", Toast.LENGTH_SHORT).show(); return@setOnClickListener
+                }
+                if (name.isEmpty() || name.length < 3) {
+                    Toast.makeText(ctx, "El nombre debe tener al menos 3 caracteres", Toast.LENGTH_SHORT).show(); return@setOnClickListener
+                }
+                if (desc.length < 10) {
+                    Toast.makeText(ctx, "La descripción debe tener al menos 10 caracteres", Toast.LENGTH_SHORT).show(); return@setOnClickListener
+                }
+
+                val selectedCatLabel = actvCategory.text.toString()
+                val selectedCat = catValues[catLabels.indexOfFirst { it == selectedCatLabel }.coerceAtLeast(0)]
+
+                val selectedSpaceName = actvSpace.text.toString()
+                val spaceId = spacesList.find { it.name == selectedSpaceName }?.id
+
                 lifecycleScope.launch {
                     try {
-                        val resp = RetrofitClient.create(requireContext()).updateEquipment(eq.id, req)
+                        val req = UpdateEquipmentRequest(
+                            inventoryNumber = inv,
+                            name            = name,
+                            category        = selectedCat,
+                            description     = desc,
+                            allowStudents   = cbStudents.isChecked,
+                            condition       = currentCondition,
+                            active          = eqPreview.active ?: true,
+                            spaceId         = spaceId
+                        )
+                        val resp = RetrofitClient.create(ctx).updateEquipment(eqPreview.id, req)
                         if (resp.isSuccessful) {
-                            Toast.makeText(requireContext(), "Equipo actualizado", Toast.LENGTH_SHORT).show(); load()
-                        } else Toast.makeText(requireContext(), "Error: ${resp.code()}", Toast.LENGTH_SHORT).show()
-                    } catch (_: Exception) { Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show() }
+                            Toast.makeText(ctx, "Equipo actualizado", Toast.LENGTH_SHORT).show()
+                            dialog.dismiss(); load()
+                        } else Toast.makeText(ctx, "Error: ${resp.code()}", Toast.LENGTH_SHORT).show()
+                    } catch (_: Exception) {
+                        Toast.makeText(ctx, "Error de conexión", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
-            .setNegativeButton("Cancelar", null).show()
+
+        dialog.show()
     }
 
     private fun showViewEquipmentDialog(eq: Equipment) {
-        try {
-            val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_equipment_detail, null)
-            view.findViewById<TextView>(R.id.tvDetailInvNumber).text = eq.inventoryNumber.ifBlank { "—" }
-            view.findViewById<TextView>(R.id.tvDetailName).text = eq.name.ifBlank { "—" }
-            view.findViewById<TextView>(R.id.tvDetailCategory).text = eq.category.ifBlank { "—" }
-            view.findViewById<TextView>(R.id.tvDetailStudents).text = if (eq.allowStudents == true) "Permitido" else "Restringido"
-            view.findViewById<TextView>(R.id.tvDetailDescription).text = eq.description.ifBlank { "—" }
-            view.findViewById<TextView>(R.id.tvDetailStatus).text = if (eq.active == true) "Activo" else "Inactivo"
-            view.findViewById<TextView>(R.id.tvDetailCondition).text = when (eq.equipmentCondition) {
-                "DISPONIBLE" -> "Disponible"
-                "EN_USO" -> "En uso"
+        val ctx = requireContext()
+        val view = LayoutInflater.from(ctx).inflate(R.layout.dialog_equipment_detail, null)
+
+        fun fillDialog(e: Equipment) {
+            view.findViewById<TextView>(R.id.tvDetailInvNumber).text  = e.inventoryNumber.ifBlank { "—" }
+            view.findViewById<TextView>(R.id.tvDetailName).text       = e.name.ifBlank { "—" }
+            view.findViewById<TextView>(R.id.tvDetailCategory).text   = e.category.ifBlank { "—" }
+            view.findViewById<TextView>(R.id.tvDetailSpace).text      = e.spaceName?.ifBlank { "—" } ?: "—"
+            view.findViewById<TextView>(R.id.tvDetailStatus).text     = if (e.active == true) "Activo" else "Inactivo"
+            view.findViewById<TextView>(R.id.tvDetailCondition).text  = when (e.equipmentCondition) {
+                "DISPONIBLE"    -> "Disponible"
+                "EN_USO"        -> "En uso"
                 "MANTENIMIENTO" -> "Mantenimiento"
-                else -> eq.equipmentCondition?.ifBlank { "—" } ?: "—"
+                else            -> e.equipmentCondition?.ifBlank { "—" } ?: "—"
             }
-            AlertDialog.Builder(requireContext())
-                .setTitle("Detalle de Equipo")
-                .setView(view)
-                .setPositiveButton("Cerrar", null)
-                .show()
-        } catch (e: Exception) {
-            Toast.makeText(requireContext(), "Error al mostrar detalle", Toast.LENGTH_SHORT).show()
+            view.findViewById<TextView>(R.id.tvDetailStudents).text   = if (e.allowStudents == true) "Permitido" else "Restringido"
+            view.findViewById<TextView>(R.id.tvDetailDescription).text = e.description.ifBlank { "—" }
+        }
+
+        fillDialog(eq)
+
+        val dialog = AlertDialog.Builder(ctx)
+            .setView(view)
+            .create()
+
+        view.findViewById<TextView>(R.id.btnEquipDetailClose).setOnClickListener { dialog.dismiss() }
+        view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnEquipDetailDismiss)
+            .setOnClickListener { dialog.dismiss() }
+
+        dialog.show()
+
+        // Cargar datos completos desde el API (incluye spaceName)
+        lifecycleScope.launch {
+            try {
+                val resp = RetrofitClient.create(ctx).getEquipment(eq.id)
+                if (resp.isSuccessful && dialog.isShowing) {
+                    resp.body()?.let { fillDialog(it) }
+                }
+            } catch (_: Exception) { }
         }
     }
 
     private fun showEquipmentHistory(eq: Equipment) {
-        val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_equipment_history, null)
-        view.findViewById<TextView>(R.id.tvHistoryEquipName).text = "🔶 ${eq.name.uppercase()}"
-        view.findViewById<View>(R.id.layoutEmpty).visibility = View.VISIBLE
+        val ctx = requireContext()
+        val view = LayoutInflater.from(ctx).inflate(R.layout.dialog_equipment_history, null)
+        view.findViewById<TextView>(R.id.tvHistoryEquipName).text = eq.name
+        val layoutEmpty = view.findViewById<View>(R.id.layoutEmpty)
+        val rvHistory   = view.findViewById<RecyclerView>(R.id.rvHistory)
+        layoutEmpty.visibility = View.VISIBLE
+        rvHistory.visibility   = View.GONE
 
-        AlertDialog.Builder(requireContext())
-            .setTitle("Historial de Reservas")
+        val dialog = AlertDialog.Builder(ctx)
             .setView(view)
-            .setPositiveButton("Cerrar", null)
-            .show()
+            .create()
+
+        view.findViewById<TextView>(R.id.btnHistoryClose).setOnClickListener { dialog.dismiss() }
+        view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnHistoryDismiss)
+            .setOnClickListener { dialog.dismiss() }
+
+        dialog.show()
+        dialog.window?.setLayout(
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        )
 
         lifecycleScope.launch {
             try {
-                val resp = RetrofitClient.create(requireContext()).getEquipmentHistory(eq.id)
+                val resp = RetrofitClient.create(ctx).getEquipmentHistory(eq.id)
                 if (resp.isSuccessful) {
                     val items = resp.body() ?: emptyList()
-                    val layoutEmpty = view.findViewById<View>(R.id.layoutEmpty)
-                    val rvHistory = view.findViewById<RecyclerView>(R.id.rvHistory)
                     if (items.isEmpty()) {
                         layoutEmpty.visibility = View.VISIBLE
-                        rvHistory.visibility = View.GONE
+                        rvHistory.visibility   = View.GONE
                     } else {
                         layoutEmpty.visibility = View.GONE
-                        rvHistory.visibility = View.VISIBLE
-                        rvHistory.layoutManager = LinearLayoutManager(requireContext())
+                        rvHistory.visibility   = View.VISIBLE
+                        rvHistory.layoutManager = LinearLayoutManager(ctx)
                         rvHistory.adapter = EquipmentHistoryAdapter(items)
                     }
-                } else Toast.makeText(requireContext(), "Error al cargar historial", Toast.LENGTH_SHORT).show()
-            } catch (_: Exception) { Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show() }
+                } else {
+                    layoutEmpty.visibility = View.VISIBLE
+                    rvHistory.visibility   = View.GONE
+                }
+            } catch (_: Exception) {
+                if (dialog.isShowing) {
+                    layoutEmpty.visibility = View.VISIBLE
+                    rvHistory.visibility   = View.GONE
+                }
+            }
         }
     }
 
@@ -356,7 +498,7 @@ class EquipmentAdapter(
 }
 
 class EquipmentHistoryAdapter(
-    private val items: List<HistoryItem>
+    private val items: List<Reservation>
 ) : RecyclerView.Adapter<EquipmentHistoryAdapter.VH>() {
 
     inner class VH(val view: View) : RecyclerView.ViewHolder(view)
@@ -367,17 +509,44 @@ class EquipmentHistoryAdapter(
     override fun getItemCount() = items.size
 
     override fun onBindViewHolder(holder: VH, position: Int) {
-        val h = items[position]
+        val r = items[position]
         holder.view.apply {
-            findViewById<TextView>(R.id.tvHistoryAction).text = h.action ?: "Acción"
-            findViewById<TextView>(R.id.tvHistoryDate).text = h.changedAt?.take(10) ?: "—"
-            findViewById<TextView>(R.id.tvHistoryBy).text = "Por: ${h.changedBy ?: "—"}"
-            val tvDetails = findViewById<TextView>(R.id.tvHistoryDetails)
-            if (h.details.isNullOrBlank()) {
-                tvDetails.visibility = View.GONE
-            } else {
-                tvDetails.visibility = View.VISIBLE
-                tvDetails.text = h.details
+            // Solicitante
+            findViewById<TextView>(R.id.tvHistoryBy).text   = r.requesterName ?: "—"
+            // Fecha
+            findViewById<TextView>(R.id.tvHistoryDate).text = r.reservationDate ?: "—"
+            // Horario
+            val schedule = r.schedule ?: if (r.startTime != null) "${r.startTime} – ${r.endTime ?: ""}" else "—"
+            findViewById<TextView>(R.id.tvHistoryDetails).text = schedule
+
+            // Estado badge con color
+            val tvStatus = findViewById<TextView>(R.id.tvHistoryAction)
+            when (r.status) {
+                "PENDIENTE" -> {
+                    tvStatus.text = "Pendiente"
+                    tvStatus.setBackgroundResource(R.drawable.bg_badge_yellow)
+                    tvStatus.setTextColor(0xFF92400E.toInt())
+                }
+                "APROBADA" -> {
+                    tvStatus.text = "Aprobada"
+                    tvStatus.setBackgroundResource(R.drawable.bg_badge_green)
+                    tvStatus.setTextColor(0xFF065F46.toInt())
+                }
+                "RECHAZADA" -> {
+                    tvStatus.text = "Rechazada"
+                    tvStatus.setBackgroundResource(R.drawable.bg_badge_red)
+                    tvStatus.setTextColor(0xFF991B1B.toInt())
+                }
+                "DEVUELTA" -> {
+                    tvStatus.text = "Devuelta"
+                    tvStatus.setBackgroundResource(R.drawable.bg_badge_blue)
+                    tvStatus.setTextColor(0xFF1D4ED8.toInt())
+                }
+                else -> {
+                    tvStatus.text = "Cancelada"
+                    tvStatus.setBackgroundResource(R.drawable.bg_badge_gray)
+                    tvStatus.setTextColor(0xFF374151.toInt())
+                }
             }
         }
     }

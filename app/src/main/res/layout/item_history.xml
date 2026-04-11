@@ -2,56 +2,71 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:paddingVertical="10dp"
-    android:paddingHorizontal="4dp">
+    android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="4dp">
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="13dp">
 
+        <!-- Solicitante -->
+        <TextView
+            android:id="@+id/tvHistoryBy"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:text="—"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#111827"
+            android:maxLines="1"
+            android:ellipsize="end"/>
+
+        <!-- Fecha -->
+        <TextView
+            android:id="@+id/tvHistoryDate"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.5"
+            android:text="—"
+            android:textSize="11sp"
+            android:textColor="#374151"
+            android:maxLines="1"
+            android:ellipsize="end"/>
+
+        <!-- Horario -->
+        <TextView
+            android:id="@+id/tvHistoryDetails"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.6"
+            android:text="—"
+            android:textSize="11sp"
+            android:textColor="#374151"
+            android:maxLines="1"
+            android:ellipsize="end"/>
+
+        <!-- Estado (badge) -->
         <TextView
             android:id="@+id/tvHistoryAction"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Acción"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:textColor="#111827"/>
-
-        <TextView
-            android:id="@+id/tvHistoryDate"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_weight="1.5"
             android:text="—"
-            android:textSize="11sp"
-            android:textColor="#9CA3AF"/>
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:maxLines="1"
+            android:paddingHorizontal="6dp"
+            android:paddingVertical="4dp"/>
     </LinearLayout>
-
-    <TextView
-        android:id="@+id/tvHistoryBy"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Por: —"
-        android:textSize="12sp"
-        android:textColor="#6B7280"
-        android:layout_marginBottom="2dp"/>
-
-    <TextView
-        android:id="@+id/tvHistoryDetails"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:textSize="12sp"
-        android:textColor="#6B7280"/>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#F3F4F6"
-        android:layout_marginTop="10dp"/>
+        android:background="#F1F5F9"/>
+
 </LinearLayout>

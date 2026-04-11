@@ -1,5 +1,12 @@
 package com.sgr.app.model
 
+import com.google.gson.JsonDeserializationContext
+import com.google.gson.JsonDeserializer
+import com.google.gson.JsonElement
+import com.google.gson.annotations.JsonAdapter
+import com.google.gson.annotations.SerializedName
+import java.lang.reflect.Type
+
 data class LoginRequest(val email: String, val password: String)
 
 data class LoginResponse(
@@ -12,6 +19,23 @@ data class LoginResponse(
     val role: String
 )
 
+// Deserializer que acepta tanto "YYYY-MM-DD" como [year, month, day] del backend
+class LocalDateStringDeserializer : JsonDeserializer<String> {
+    override fun deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): String? {
+        return when {
+            json.isJsonNull -> null
+            json.isJsonPrimitive -> json.asString
+            json.isJsonArray -> {
+                val arr = json.asJsonArray
+                if (arr.size() == 3)
+                    String.format("%04d-%02d-%02d", arr[0].asInt, arr[1].asInt, arr[2].asInt)
+                else null
+            }
+            else -> null
+        }
+    }
+}
+
 data class User(
     val id: Long,
     val name: String,
@@ -22,6 +46,7 @@ data class User(
     val active: Boolean?,
     val identifier: String?,
     val userType: String?,
+    @field:JsonAdapter(LocalDateStringDeserializer::class)
     val birthDate: String?
 )
 
@@ -71,37 +96,47 @@ data class Equipment(
     val description: String,
     val allowStudents: Boolean?,
     val active: Boolean?,
+    @SerializedName("condition")
     val equipmentCondition: String?,
-    val createdAt: String?
+    val createdAt: String?,
+    val spaceId: Long? = null,
+    val spaceName: String? = null
 )
 
 data class Reservation(
     val id: Long,
-    val requesterId: Long,
+    val requesterId: Long? = null,
     val requesterName: String?,
     val requesterEmail: String?,
+    val requesterType: String? = null,
     val resourceType: String,
-    val spaceId: Long?,
-    val spaceName: String?,
-    val equipmentId: Long?,
-    val equipmentName: String?,
+    val resourceName: String? = null,
+    val spaceId: Long? = null,
+    val spaceName: String? = null,
+    val equipmentId: Long? = null,
+    val equipmentName: String? = null,
     val reservationDate: String?,
+    val endDate: String?,
+    val schedule: String? = null,
     val startTime: String?,
     val endTime: String?,
     val purpose: String?,
     val observations: String?,
     val status: String?,
     val adminComment: String?,
-    val createdAt: String?
+    val createdAt: String?,
+    val returnCondition: String? = null,
+    val returnDescription: String? = null,
+    val returnedAt: String? = null
 )
 
 data class CreateReservationRequest(
     val requesterId: Long,
     val resourceType: String,
-    val spaceId: Long?,
-    val equipmentId: Long?,
+    val resourceId: Long,
     val reservationDate: String,
     val startTime: String,
+    val endDate: String?,
     val endTime: String,
     val purpose: String,
     val observations: String?
@@ -109,7 +144,7 @@ data class CreateReservationRequest(
 
 data class ApproveRequest(val adminComment: String?)
 data class RejectRequest(val adminComment: String)
-data class ReturnRequest(val condition: String, val description: String?)
+data class ReturnRequest(val returnCondition: String, val returnDescription: String?)
 
 data class PageResponse<T>(
     val content: List<T>,
@@ -158,13 +193,24 @@ data class CreateEquipmentRequest(
     val active: Boolean
 )
 
+data class UpdateEquipmentRequest(
+    val inventoryNumber: String,
+    val name: String,
+    val category: String,
+    val description: String,
+    val allowStudents: Boolean,
+    val condition: String,
+    val active: Boolean,
+    val spaceId: Long?
+)
+
 data class UpdateReservationRequest(
     val requesterId: Long,
     val resourceType: String,
-    val spaceId: Long?,
-    val equipmentId: Long?,
+    val resourceId: Long,
     val reservationDate: String,
     val startTime: String,
+    val endDate: String?,
     val endTime: String,
     val purpose: String,
     val observations: String?

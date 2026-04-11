@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="@color/white">
+
+    <!-- ── HEADER ── -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="20dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Registrar Devolución"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                android:textColor="#111827"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Indica el estado en que se recibe el recurso"
+                android:textSize="12sp"
+                android:textColor="#94A3B8"
+                android:layout_marginTop="2dp"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/btnReturnClose"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:text="✕"
+            android:textSize="18sp"
+            android:textColor="#94A3B8"
+            android:clickable="true"
+            android:focusable="true"/>
+    </LinearLayout>
+
+    <!-- ── INFO: Solicitante y Recurso ── -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/bg_detail_card"
+        android:padding="14dp"
+        android:layout_marginBottom="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SOLICITANTE"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:textColor="#9CA3AF"
+            android:layout_marginBottom="2dp"/>
+
+        <TextView
+            android:id="@+id/tvReturnRequester"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="—"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#111827"
+            android:layout_marginBottom="10dp"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E5E7EB"
+            android:layout_marginBottom="10dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="RECURSO"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:textColor="#9CA3AF"
+            android:layout_marginBottom="2dp"/>
+
+        <TextView
+            android:id="@+id/tvReturnResource"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="—"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#111827"/>
+    </LinearLayout>
+
+    <!-- ── ESTADO DE DEVOLUCIÓN ── -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Estado de devolución *"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="#374151"
+        android:layout_marginBottom="10dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="6dp">
+
+        <!-- Opción: Buen Estado -->
+        <LinearLayout
+            android:id="@+id/optBuenEstado"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="14dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/bg_card_selectable"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:id="@+id/ivBuenEstado"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:gravity="center"
+                android:text="✓"
+                android:textSize="13sp"
+                android:textColor="#9CA3AF"
+                android:layout_marginEnd="8dp"/>
+
+            <TextView
+                android:id="@+id/tvBuenEstado"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Buen estado"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#334155"/>
+        </LinearLayout>
+
+        <!-- Opción: Dañado -->
+        <LinearLayout
+            android:id="@+id/optDanado"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="14dp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_card_selectable"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:gravity="center"
+                android:text="⚠"
+                android:textSize="13sp"
+                android:textColor="#9CA3AF"
+                android:layout_marginEnd="8dp"/>
+
+            <TextView
+                android:id="@+id/tvDanado"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Dañado"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#334155"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvReturnConditionError"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Debe seleccionar el estado de devolución"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:textColor="#DC2626"
+        android:visibility="gone"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- ── DESCRIPCIÓN DEL DAÑO (solo visible si DAÑADO) ── -->
+    <LinearLayout
+        android:id="@+id/sectionDamageDesc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginBottom="4dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Descripción del daño *"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#374151"
+            android:layout_marginBottom="8dp"
+            android:layout_marginTop="12dp"/>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etDamageDesc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Describe el estado del recurso y los daños encontrados..."
+                android:inputType="textMultiLine"
+                android:minLines="3"
+                android:gravity="top"
+                android:textSize="14sp"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/tvDamageDescError"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Describe el daño (mínimo 10 caracteres)"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#DC2626"
+            android:visibility="gone"
+            android:layout_marginTop="4dp"/>
+    </LinearLayout>
+
+    <!-- ── BOTONES ── -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="20dp">
+
+        <TextView
+            android:id="@+id/btnReturnCancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancelar"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#64748B"
+            android:padding="12dp"
+            android:clickable="true"
+            android:focusable="true"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnReturnConfirm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Registrar Devolución"
+            android:textSize="13sp"
+            android:backgroundTint="#2563EB"
+            android:layout_marginStart="8dp"
+            style="@style/Widget.MaterialComponents.Button"/>
+    </LinearLayout>
+
+</LinearLayout>

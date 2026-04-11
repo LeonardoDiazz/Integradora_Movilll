@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.sgr.app.R
 import com.sgr.app.databinding.FragmentSpacesBinding
 import com.sgr.app.model.CreateSpaceRequest
-import com.sgr.app.model.HistoryItem
+import com.sgr.app.model.Reservation
 import com.sgr.app.model.Space
 import com.sgr.app.network.RetrofitClient
 import kotlinx.coroutines.launch
@@ -90,7 +90,7 @@ class SpacesFragment : Fragment() {
             load()
         }
 
-        binding.btnAddSpace.setOnClickListener { showCreateSpaceDialog() }
+
 
         binding.btnPrev.setOnClickListener { if (currentPage > 0) { currentPage--; load() } }
         binding.btnNext.setOnClickListener { if (currentPage < totalPages - 1) { currentPage++; load() } }
@@ -225,22 +225,98 @@ class SpacesFragment : Fragment() {
     }
 
     private fun showEditSpaceDialog(space: Space) {
-        val (view, buildRequest) = buildSpaceForm(space)
-        AlertDialog.Builder(requireContext())
-            .setTitle("Editar espacio")
+        val ctx = requireContext()
+        val view = LayoutInflater.from(ctx).inflate(R.layout.dialog_space_edit, null)
+
+        val etName        = view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etEditSpaceName)
+        val etLocation    = view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etEditSpaceLocation)
+        val etCapacity    = view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etEditSpaceCapacity)
+        val etDescription = view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etEditSpaceDescription)
+        val actvCategory  = view.findViewById<AutoCompleteTextView>(R.id.actvEditSpaceCategory)
+        val actvAvail     = view.findViewById<AutoCompleteTextView>(R.id.actvEditSpaceAvailability)
+        val actvStatus    = view.findViewById<AutoCompleteTextView>(R.id.actvEditSpaceStatus)
+        val cbStudents    = view.findViewById<android.widget.CheckBox>(R.id.cbEditSpaceStudents)
+
+        // Categoría
+        val catLabels = arrayOf("Sala", "Laboratorio", "Auditorio", "Aula")
+        val catValues = arrayOf("SALA", "LABORATORIO", "AUDITORIO", "AULA")
+        actvCategory.setAdapter(ArrayAdapter(ctx, android.R.layout.simple_dropdown_item_1line, catLabels))
+        val catIdx = catValues.indexOfFirst { it.equals(space.category, ignoreCase = true) }.coerceAtLeast(0)
+        actvCategory.setText(catLabels[catIdx], false)
+
+        // Disponibilidad
+        val availLabels = arrayOf("Disponible", "Ocupado", "Mantenimiento")
+        val availValues = arrayOf("DISPONIBLE", "OCUPADO", "MANTENIMIENTO")
+        actvAvail.setAdapter(ArrayAdapter(ctx, android.R.layout.simple_dropdown_item_1line, availLabels))
+        val availIdx = availValues.indexOfFirst { it == space.availability }.coerceAtLeast(0)
+        actvAvail.setText(availLabels[availIdx], false)
+
+        // Estado
+        val statusLabels = arrayOf("Activo", "Inactivo")
+        val statusValues = arrayOf(true, false)
+        actvStatus.setAdapter(ArrayAdapter(ctx, android.R.layout.simple_dropdown_item_1line, statusLabels))
+        actvStatus.setText(if (space.active != false) "Activo" else "Inactivo", false)
+
+        // Pre-llenar campos
+        etName.setText(space.name)
+        etLocation.setText(space.location)
+        etCapacity.setText(space.capacity.toString())
+        etDescription.setText(space.description)
+        cbStudents.isChecked = space.allowStudents ?: true
+
+        val dialog = AlertDialog.Builder(ctx)
             .setView(view)
-            .setPositiveButton("Guardar") { _, _ ->
-                val req = buildRequest() ?: return@setPositiveButton
+            .create()
+        dialog.window?.setLayout(
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+
+        view.findViewById<TextView>(R.id.btnEditSpaceClose).setOnClickListener  { dialog.dismiss() }
+        view.findViewById<TextView>(R.id.btnEditSpaceCancel).setOnClickListener { dialog.dismiss() }
+
+        view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnEditSpaceSave)
+            .setOnClickListener {
+                val name = etName.text.toString().trim()
+                val location = etLocation.text.toString().trim()
+                val desc = etDescription.text.toString().trim()
+                val capacity = etCapacity.text.toString().toIntOrNull()
+
+                if (name.length < 3) {
+                    Toast.makeText(ctx, "El nombre debe tener al menos 3 caracteres", Toast.LENGTH_SHORT).show(); return@setOnClickListener
+                }
+                if (capacity == null || capacity <= 0) {
+                    Toast.makeText(ctx, "Ingresa una capacidad válida", Toast.LENGTH_SHORT).show(); return@setOnClickListener
+                }
+
+                val selectedCat = catValues[catLabels.indexOfFirst { it == actvCategory.text.toString() }.coerceAtLeast(0)]
+                val selectedAvail = availValues[availLabels.indexOfFirst { it == actvAvail.text.toString() }.coerceAtLeast(0)]
+                val isActive = actvStatus.text.toString() == "Activo"
+
                 lifecycleScope.launch {
                     try {
-                        val resp = RetrofitClient.create(requireContext()).updateSpace(space.id, req)
+                        val req = CreateSpaceRequest(
+                            name          = name,
+                            category      = selectedCat,
+                            location      = location,
+                            capacity      = capacity,
+                            description   = desc,
+                            allowStudents = cbStudents.isChecked,
+                            availability  = selectedAvail,
+                            active        = isActive
+                        )
+                        val resp = RetrofitClient.create(ctx).updateSpace(space.id, req)
                         if (resp.isSuccessful) {
-                            Toast.makeText(requireContext(), "Espacio actualizado", Toast.LENGTH_SHORT).show(); load()
-                        } else Toast.makeText(requireContext(), "Error: ${resp.code()}", Toast.LENGTH_SHORT).show()
-                    } catch (_: Exception) { Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show() }
+                            Toast.makeText(ctx, "Espacio actualizado", Toast.LENGTH_SHORT).show()
+                            dialog.dismiss(); load()
+                        } else Toast.makeText(ctx, "Error: ${resp.code()}", Toast.LENGTH_SHORT).show()
+                    } catch (_: Exception) {
+                        Toast.makeText(ctx, "Error de conexión", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
-            .setNegativeButton("Cancelar", null).show()
+
+        dialog.show()
     }
 
     private fun showViewSpaceDialog(space: Space) {
@@ -266,38 +342,51 @@ class SpacesFragment : Fragment() {
     }
 
     private fun showSpaceHistory(space: Space) {
-        val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_space_history, null)
-        view.findViewById<TextView>(R.id.tvHistorySpaceName).text = "🏢 ${space.name.uppercase()}"
-        // Mostrar estado vacío por defecto mientras carga
-        view.findViewById<View>(R.id.layoutEmpty).visibility = View.VISIBLE
+        val ctx = requireContext()
+        val view = LayoutInflater.from(ctx).inflate(R.layout.dialog_space_history, null)
+        view.findViewById<TextView>(R.id.tvHistorySpaceName).text = space.name
+        val layoutEmpty = view.findViewById<View>(R.id.layoutEmpty)
+        val rvHistory   = view.findViewById<RecyclerView>(R.id.rvHistory)
+        layoutEmpty.visibility = View.VISIBLE
+        rvHistory.visibility   = View.GONE
 
-        AlertDialog.Builder(requireContext())
-            .setTitle("Historial de Reservas")
+        val dialog = AlertDialog.Builder(ctx)
             .setView(view)
-            .setPositiveButton("Cerrar", null)
-            .show()
+            .create()
+
+        view.findViewById<TextView>(R.id.btnSpaceHistoryClose).setOnClickListener { dialog.dismiss() }
+        view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSpaceHistoryDismiss)
+            .setOnClickListener { dialog.dismiss() }
+
+        dialog.show()
+        dialog.window?.setLayout(
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        )
 
         lifecycleScope.launch {
             try {
-                val resp = RetrofitClient.create(requireContext()).getSpaceHistory(space.id)
+                val resp = RetrofitClient.create(ctx).getSpaceHistory(space.id)
                 if (resp.isSuccessful) {
                     val items = resp.body() ?: emptyList()
-                    val layoutEmpty = view.findViewById<View>(R.id.layoutEmpty)
-                    val rvHistory = view.findViewById<RecyclerView>(R.id.rvHistory)
                     if (items.isEmpty()) {
                         layoutEmpty.visibility = View.VISIBLE
-                        rvHistory.visibility = View.GONE
+                        rvHistory.visibility   = View.GONE
                     } else {
                         layoutEmpty.visibility = View.GONE
-                        rvHistory.visibility = View.VISIBLE
-                        rvHistory.layoutManager = LinearLayoutManager(requireContext())
-                        rvHistory.adapter = HistoryAdapter(items)
+                        rvHistory.visibility   = View.VISIBLE
+                        rvHistory.layoutManager = LinearLayoutManager(ctx)
+                        rvHistory.adapter = SpaceHistoryAdapter(items)
                     }
                 } else {
-                    Toast.makeText(requireContext(), "Error al cargar historial", Toast.LENGTH_SHORT).show()
+                    layoutEmpty.visibility = View.VISIBLE
+                    rvHistory.visibility   = View.GONE
                 }
             } catch (_: Exception) {
-                Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show()
+                if (dialog.isShowing) {
+                    layoutEmpty.visibility = View.VISIBLE
+                    rvHistory.visibility   = View.GONE
+                }
             }
         }
     }
@@ -368,9 +457,9 @@ class SpaceAdapter(
     }
 }
 
-class HistoryAdapter(
-    private val items: List<HistoryItem>
-) : RecyclerView.Adapter<HistoryAdapter.VH>() {
+class SpaceHistoryAdapter(
+    private val items: List<Reservation>
+) : RecyclerView.Adapter<SpaceHistoryAdapter.VH>() {
 
     inner class VH(val view: View) : RecyclerView.ViewHolder(view)
 
@@ -380,17 +469,44 @@ class HistoryAdapter(
     override fun getItemCount() = items.size
 
     override fun onBindViewHolder(holder: VH, position: Int) {
-        val h = items[position]
+        val r = items[position]
         holder.view.apply {
-            findViewById<TextView>(R.id.tvHistoryAction).text = h.action ?: "Acción"
-            findViewById<TextView>(R.id.tvHistoryDate).text = h.changedAt?.take(10) ?: "—"
-            findViewById<TextView>(R.id.tvHistoryBy).text = "Por: ${h.changedBy ?: "—"}"
-            val tvDetails = findViewById<TextView>(R.id.tvHistoryDetails)
-            if (h.details.isNullOrBlank()) {
-                tvDetails.visibility = View.GONE
-            } else {
-                tvDetails.visibility = View.VISIBLE
-                tvDetails.text = h.details
+            // Solicitante
+            findViewById<TextView>(R.id.tvHistoryBy).text   = r.requesterName ?: "—"
+            // Fecha
+            findViewById<TextView>(R.id.tvHistoryDate).text = r.reservationDate ?: "—"
+            // Horario
+            val schedule = r.schedule ?: if (r.startTime != null) "${r.startTime} – ${r.endTime ?: ""}" else "—"
+            findViewById<TextView>(R.id.tvHistoryDetails).text = schedule
+
+            // Estado badge con color
+            val tvStatus = findViewById<TextView>(R.id.tvHistoryAction)
+            when (r.status) {
+                "PENDIENTE" -> {
+                    tvStatus.text = "Pendiente"
+                    tvStatus.setBackgroundResource(R.drawable.bg_badge_yellow)
+                    tvStatus.setTextColor(0xFF92400E.toInt())
+                }
+                "APROBADA" -> {
+                    tvStatus.text = "Aprobada"
+                    tvStatus.setBackgroundResource(R.drawable.bg_badge_green)
+                    tvStatus.setTextColor(0xFF065F46.toInt())
+                }
+                "RECHAZADA" -> {
+                    tvStatus.text = "Rechazada"
+                    tvStatus.setBackgroundResource(R.drawable.bg_badge_red)
+                    tvStatus.setTextColor(0xFF991B1B.toInt())
+                }
+                "DEVUELTA" -> {
+                    tvStatus.text = "Devuelta"
+                    tvStatus.setBackgroundResource(R.drawable.bg_badge_blue)
+                    tvStatus.setTextColor(0xFF1D4ED8.toInt())
+                }
+                else -> {
+                    tvStatus.text = "Cancelada"
+                    tvStatus.setBackgroundResource(R.drawable.bg_badge_gray)
+                    tvStatus.setTextColor(0xFF374151.toInt())
+                }
             }
         }
     }

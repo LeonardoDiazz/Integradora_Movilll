@@ -2,40 +2,119 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="@color/white">
 
-    <!-- Chip nombre del equipo -->
+    <!-- ── HEADER ── -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:paddingHorizontal="20dp"
-        android:paddingTop="4dp"
+        android:paddingTop="18dp"
         android:paddingBottom="12dp">
 
-        <TextView
-            android:id="@+id/tvHistoryEquipName"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="5dp"
-            android:text="🔶 EQUIPO"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textColor="#C2410C"
-            android:background="@drawable/bg_chip_orange"/>
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Historial de Reservas"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#111827"
+                android:layout_marginBottom="8dp"/>
+
+            <!-- Chip nombre del equipo -->
+            <TextView
+                android:id="@+id/tvHistoryEquipName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="5dp"
+                android:text="EQUIPO"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#C2410C"
+                android:background="@drawable/bg_chip_orange"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/btnHistoryClose"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:text="✕"
+            android:textSize="18sp"
+            android:textColor="#94A3B8"
+            android:clickable="true"
+            android:focusable="true"/>
     </LinearLayout>
 
-    <!-- Separador -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#F3F4F6"/>
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEF2F7"/>
 
-    <!-- Contenido -->
+    <!-- ── TABLE HEADER ── -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#F8FAFC"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="10dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:text="SOLICITANTE"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:textColor="#94A3B8"
+            android:letterSpacing="0.04"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.5"
+            android:text="FECHA"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:textColor="#94A3B8"
+            android:letterSpacing="0.04"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.6"
+            android:text="HORARIO"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:textColor="#94A3B8"
+            android:letterSpacing="0.04"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.5"
+            android:text="ESTADO"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:textColor="#94A3B8"
+            android:letterSpacing="0.04"/>
+    </LinearLayout>
+
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E5E7EB"/>
+
+    <!-- ── CONTENIDO (vacío o lista) ── -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="160dp">
+        android:minHeight="120dp">
 
         <!-- Estado vacío -->
         <LinearLayout
@@ -49,50 +128,49 @@
             android:visibility="gone">
 
             <TextView
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="ℹ"
                 android:textSize="28sp"
                 android:textColor="#D1D5DB"
                 android:gravity="center"
-                android:layout_marginBottom="12dp"/>
+                android:layout_marginBottom="10dp"/>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Este equipo no tiene registros de reservas previas."
+                android:text="Este equipo no tiene registros de reservas."
                 android:textSize="13sp"
                 android:textColor="#9CA3AF"
                 android:gravity="center"/>
         </LinearLayout>
 
-        <!-- Lista de historial -->
+        <!-- Lista -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvHistory"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:maxHeight="240dp"
-            android:padding="12dp"
-            android:clipToPadding="false"
             android:visibility="gone"/>
     </FrameLayout>
 
-    <!-- Separador -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#F3F4F6"/>
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEF2F7"/>
 
-    <!-- Footer -->
-    <TextView
+    <!-- ── FOOTER ── -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="ÚLTIMOS 10 REGISTROS"
-        android:textSize="11sp"
-        android:textStyle="bold"
-        android:textColor="#9CA3AF"
-        android:gravity="center"
-        android:paddingVertical="14dp"
-        android:letterSpacing="0.08"/>
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="14dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnHistoryDismiss"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cerrar"
+            android:textSize="13sp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+    </LinearLayout>
 
 </LinearLayout>

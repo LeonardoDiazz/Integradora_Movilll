@@ -1,6 +1,7 @@
 package com.sgr.app.ui.admin
 
 import android.app.AlertDialog
+import android.app.DatePickerDialog
 import android.os.Bundle
 import android.view.*
 import android.widget.*
@@ -25,7 +26,7 @@ class UsersFragment : Fragment() {
     private var totalPages = 1
 
     private val rolesLabels = arrayOf("Todos", "Administrador", "Usuario solicitante")
-    private val rolesValues = arrayOf("", "ADMIN", "STUDENTS")
+    private val rolesValues = arrayOf("", "ADMIN", "STUDENT")
 
     private val tiposLabels = arrayOf("Todos", "Estudiante", "Personal")
     private val tiposValues = arrayOf("", "ESTUDIANTE", "STAFF")
@@ -71,7 +72,7 @@ class UsersFragment : Fragment() {
             load()
         }
 
-        binding.btnAddUser.setOnClickListener { showCreateUserDialog() }
+
 
         binding.btnPrev.setOnClickListener { if (currentPage > 0) { currentPage--; load() } }
         binding.btnNext.setOnClickListener { if (currentPage < totalPages - 1) { currentPage++; load() } }
@@ -143,6 +144,24 @@ class UsersFragment : Fragment() {
         val etPhone = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etPhone)
         val etPassword = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etPassword)
 
+        // Fecha de nacimiento — abre DatePickerDialog al tocar
+        etBirthDate.setOnClickListener {
+            val cal = java.util.Calendar.getInstance()
+            // Si ya tiene fecha, parsearla para abrir en esa fecha
+            val current = etBirthDate.text?.toString()
+            if (!current.isNullOrBlank()) {
+                try {
+                    val parts = current.split("-")
+                    if (parts.size == 3) {
+                        cal.set(parts[0].toInt(), parts[1].toInt() - 1, parts[2].toInt())
+                    }
+                } catch (_: Exception) { }
+            }
+            DatePickerDialog(ctx, { _, year, month, day ->
+                etBirthDate.setText(String.format("%04d-%02d-%02d", year, month + 1, day))
+            }, cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH), cal.get(java.util.Calendar.DAY_OF_MONTH)).show()
+        }
+
         // Pre-llenar si es edición
         user?.let {
             etName.setText(it.name)
@@ -154,21 +173,21 @@ class UsersFragment : Fragment() {
         }
 
         // Dropdowns de Rol
-        val roleValues = arrayOf("STUDENTS", "ADMIN")
+        val roleValues = arrayOf("STUDENT", "ADMIN")
         val roleLabels = arrayOf("Solicitante", "Administrador")
         val actvRole = dialogView.findViewById<AutoCompleteTextView>(R.id.spinnerRole)
         val roleAdapter = ArrayAdapter(ctx, android.R.layout.simple_dropdown_item_1line, roleLabels)
         actvRole.setAdapter(roleAdapter)
-        val roleIdx = roleValues.indexOf(user?.role ?: "STUDENTS").coerceAtLeast(0)
+        val roleIdx = roleValues.indexOf(user?.role ?: "STUDENT").coerceAtLeast(0)
         actvRole.setText(roleLabels[roleIdx], false)
 
         // Dropdowns de Tipo
-        val userTypeValues = arrayOf("ESTUDIANTE", "STAFF")
-        val userTypeLabels = arrayOf("Estudiante", "Personal Académico")
+        val userTypeValues = arrayOf("Estudiante", "Personal Académico", "Administrativo")
+        val userTypeLabels = arrayOf("Estudiante", "Personal Académico", "Administrativo")
         val actvUserType = dialogView.findViewById<AutoCompleteTextView>(R.id.spinnerUserType)
         val typeAdapter = ArrayAdapter(ctx, android.R.layout.simple_dropdown_item_1line, userTypeLabels)
         actvUserType.setAdapter(typeAdapter)
-        val typeIdx = userTypeValues.indexOf(user?.userType ?: "ESTUDIANTE").coerceAtLeast(0)
+        val typeIdx = userTypeValues.indexOf(user?.userType ?: "Estudiante").coerceAtLeast(0)
         actvUserType.setText(userTypeLabels[typeIdx], false)
 
         // Diálogo pantalla completa
@@ -188,11 +207,26 @@ class UsersFragment : Fragment() {
             val lastName = etLastName.text.toString().trim()
             val email = etEmail.text.toString().trim()
             val password = etPassword.text.toString()
+            val identifier = etIdentifier.text.toString().trim()
+            val birthDate = etBirthDate.text.toString().trim()
+            val phone = etPhone.text.toString().trim()
             val selectedRole = roleValues[roleLabels.indexOf(actvRole.text.toString()).coerceAtLeast(0)]
             val selectedType = userTypeValues[userTypeLabels.indexOf(actvUserType.text.toString()).coerceAtLeast(0)]
 
             if (name.isEmpty() || lastName.isEmpty() || email.isEmpty()) {
                 Toast.makeText(ctx, "Nombre, apellidos y correo son requeridos", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (identifier.isEmpty()) {
+                Toast.makeText(ctx, "La matrícula o número de empleado es obligatoria", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (birthDate.isEmpty()) {
+                Toast.makeText(ctx, "La fecha de nacimiento es obligatoria", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (phone.isEmpty() || !phone.matches(Regex("^\\d{10}$"))) {
+                Toast.makeText(ctx, "El teléfono debe tener exactamente 10 dígitos", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             if (isCreate && password.isEmpty()) {
@@ -206,25 +240,25 @@ class UsersFragment : Fragment() {
                     val resp = if (isCreate) {
                         val req = CreateUserRequest(
                             name = name, lastName = lastName, email = email,
-                            identifier = etIdentifier.text.toString().trim(),
+                            identifier = identifier,
                             password = password,
                             role = selectedRole, active = true,
                             userType = selectedType,
-                            birthDate = etBirthDate.text.toString().trim().ifEmpty { null },
-                            phone = etPhone.text.toString().trim().ifEmpty { null }
+                            birthDate = birthDate,
+                            phone = phone
                         )
                         api.createUser(req)
                     } else {
                         val req = UpdateUserRequest(
                             name = name, lastName = lastName, email = email,
-                            identifier = etIdentifier.text.toString().trim().ifEmpty { null },
+                            identifier = identifier,
                             password = password.ifEmpty { null },
-                            role = selectedRole, active = true,
+                            role = selectedRole, active = user!!.active ?: true,
                             userType = selectedType,
-                            birthDate = etBirthDate.text.toString().trim().ifEmpty { null },
-                            phone = etPhone.text.toString().trim().ifEmpty { null }
+                            birthDate = birthDate,
+                            phone = phone
                         )
-                        api.updateUser(user!!.id, req)
+                        api.updateUser(user.id, req)
                     }
                     if (resp.isSuccessful) {
                         Toast.makeText(ctx, if (isCreate) "Usuario creado" else "Usuario actualizado", Toast.LENGTH_SHORT).show()
@@ -238,112 +272,115 @@ class UsersFragment : Fragment() {
     }
 
     private fun showCreateUserDialog() = showUserFormDialog(null)
-    private fun showEditUserDialog(user: User) = showUserFormDialog(user)
 
-    private fun showViewUserDialog(user: User) {
-        val ctx = requireContext()
-        val rolLabel = if (user.role == "ADMIN") "Administrador" else "Solicitante"
-        val tipoLabel = when (user.userType) {
-            "ESTUDIANTE" -> "Estudiante"
-            "STAFF" -> "Personal"
-            else -> "—"
+    private fun showEditUserDialog(user: User) {
+        // Cargar datos completos desde la API antes de mostrar el formulario
+        // (el listado no incluye birthDate, viene null sin este paso)
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.create(requireContext()).getUser(user.id)
+                val fullUser = if (response.isSuccessful) response.body() ?: user else user
+                showUserFormDialog(fullUser)
+            } catch (_: Exception) {
+                showUserFormDialog(user)
+            }
         }
-        val activeLabel = if (user.active == true) "Activo" else "Inactivo"
+    }
+
+    private fun showViewUserDialog(userPreview: User) {
+        val ctx = requireContext()
+        val dp = ctx.resources.displayMetrics.density
 
         val scroll = ScrollView(ctx)
         val root = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(48, 24, 48, 8)
         }
+        scroll.addView(root)
 
-        fun field(label: String, value: String) {
-            val container = LinearLayout(ctx).apply {
+        fun cell(label: String, value: String): LinearLayout {
+            return LinearLayout(ctx).apply {
                 orientation = LinearLayout.VERTICAL
                 background = android.graphics.drawable.GradientDrawable().apply {
                     setColor(0xFFF8FAFC.toInt())
-                    cornerRadius = 12f * ctx.resources.displayMetrics.density
+                    cornerRadius = 12f * dp
                 }
                 setPadding(24, 14, 24, 14)
-                val lp = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-                lp.bottomMargin = (8 * ctx.resources.displayMetrics.density).toInt()
-                layoutParams = lp
-            }
-            val tvLabel = TextView(ctx).apply {
-                text = label.uppercase()
-                textSize = 10f
-                setTextColor(0xFF6B7280.toInt())
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-            }
-            val tvValue = TextView(ctx).apply {
-                text = value
-                textSize = 14f
-                setTextColor(0xFF111827.toInt())
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-                setPadding(0, 4, 0, 0)
-            }
-            container.addView(tvLabel)
-            container.addView(tvValue)
-            root.addView(container)
-        }
-
-        // Fila doble (2 columnas)
-        fun rowOf2(label1: String, val1: String, label2: String, val2: String) {
-            val row = LinearLayout(ctx).apply {
-                orientation = LinearLayout.HORIZONTAL
-                val lp = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-                lp.bottomMargin = (8 * ctx.resources.displayMetrics.density).toInt()
-                layoutParams = lp
-            }
-            fun cell(label: String, value: String): LinearLayout {
-                val container = LinearLayout(ctx).apply {
-                    orientation = LinearLayout.VERTICAL
-                    background = android.graphics.drawable.GradientDrawable().apply {
-                        setColor(0xFFF8FAFC.toInt())
-                        cornerRadius = 12f * ctx.resources.displayMetrics.density
-                    }
-                    setPadding(24, 14, 24, 14)
-                    val lp2 = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                    layoutParams = lp2
-                }
-                container.addView(TextView(ctx).apply {
+                addView(TextView(ctx).apply {
                     text = label.uppercase(); textSize = 10f
                     setTextColor(0xFF6B7280.toInt()); typeface = android.graphics.Typeface.DEFAULT_BOLD
                 })
-                container.addView(TextView(ctx).apply {
+                addView(TextView(ctx).apply {
                     text = value; textSize = 14f
                     setTextColor(0xFF111827.toInt()); typeface = android.graphics.Typeface.DEFAULT_BOLD
                     setPadding(0, 4, 0, 0)
                 })
-                return container
             }
-            val cell1 = cell(label1, val1)
-            val cell2 = cell(label2, val2)
-            val gapLp = LinearLayout.LayoutParams((8 * ctx.resources.displayMetrics.density).toInt(), 1)
-            row.addView(cell1)
-            row.addView(android.view.View(ctx).apply { layoutParams = gapLp })
-            row.addView(cell2)
-            root.addView(row)
         }
 
-        rowOf2("Nombre", user.name, "Apellidos", user.lastName)
-        rowOf2("Fecha de nacimiento", user.birthDate ?: "—", "Rol", rolLabel)
-        rowOf2("Tipo de usuario", tipoLabel, "Matrícula / ID", user.identifier ?: "—")
-        rowOf2("Correo", user.email, "Teléfono", user.phone ?: "—")
-        field("Estado", activeLabel)
+        fun buildRows(u: User) {
+            root.removeAllViews()
+            val rolLabel = when (u.role) {
+                "ADMIN" -> "Administrador"
+                "STAFF" -> "Personal"
+                else -> "Solicitante"
+            }
+            val tipoLabel = when (u.userType) {
+                "Estudiante" -> "Estudiante"
+                "Personal Académico" -> "Personal Académico"
+                "Administrativo" -> "Administrativo"
+                "ESTUDIANTE" -> "Estudiante"
+                "STAFF" -> "Personal"
+                else -> u.userType ?: "—"
+            }
+            val activeLabel = if (u.active == true) "Activo" else "Inactivo"
 
-        scroll.addView(root)
+            fun row2(l1: String, v1: String, l2: String, v2: String) {
+                root.addView(LinearLayout(ctx).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                    lp.bottomMargin = (8 * dp).toInt(); layoutParams = lp
+                    val c1 = cell(l1, v1).apply { layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) }
+                    val gap = android.view.View(ctx).apply { layoutParams = LinearLayout.LayoutParams((8 * dp).toInt(), 1) }
+                    val c2 = cell(l2, v2).apply { layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) }
+                    addView(c1); addView(gap); addView(c2)
+                })
+            }
 
-        AlertDialog.Builder(ctx)
+            fun row1(l: String, v: String) {
+                root.addView(cell(l, v).apply {
+                    val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                    lp.bottomMargin = (8 * dp).toInt(); layoutParams = lp
+                })
+            }
+
+            row2("Nombre", u.name, "Apellidos", u.lastName)
+            row2("Fecha de nacimiento", u.birthDate ?: "—", "Rol", rolLabel)
+            row2("Tipo de usuario", tipoLabel, "Matrícula / ID", u.identifier ?: "—")
+            row2("Correo", u.email, "Teléfono", u.phone ?: "—")
+            row1("Estado", activeLabel)
+        }
+
+        // Mostrar datos del listado inmediatamente
+        buildRows(userPreview)
+
+        val dialog = AlertDialog.Builder(ctx)
             .setTitle("Detalle de Usuario")
             .setView(scroll)
             .setPositiveButton("Cerrar", null)
             .show()
+
+        // Cargar datos frescos desde la API
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.create(ctx).getUser(userPreview.id)
+                if (response.isSuccessful) {
+                    response.body()?.let { fresh ->
+                        if (dialog.isShowing) buildRows(fresh)
+                    }
+                }
+            } catch (_: Exception) { }
+        }
     }
 
     override fun onDestroyView() { super.onDestroyView(); _binding = null }
