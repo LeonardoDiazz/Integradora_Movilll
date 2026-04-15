@@ -147,30 +147,6 @@
                     android:backgroundTint="@color/green_primary"
                     xmlns:app="http://schemas.android.com/apk/res-auto"/>
 
-                <!-- Estado de conexión al servidor -->
-                <LinearLayout
-                    android:id="@+id/layoutNetworkStatus"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center"
-                    android:layout_marginTop="16dp">
-
-                    <ProgressBar
-                        android:id="@+id/progressNetwork"
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:layout_marginEnd="8dp"
-                        android:visibility="gone"/>
-
-                    <TextView
-                        android:id="@+id/tvNetworkStatus"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Buscando servidor..."
-                        android:textSize="12sp"
-                        android:textColor="@color/gray_text"/>
-                </LinearLayout>
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>

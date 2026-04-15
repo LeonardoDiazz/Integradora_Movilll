@@ -337,6 +337,38 @@ class MyRequestsFragment : Fragment() {
 
             lifecycleScope.launch {
                 try {
+                    val api = RetrofitClient.create(requireContext())
+
+                    // Verificar disponibilidad (excluyendo la propia solicitud que se edita)
+                    val historyResp = if (r.resourceType == "SPACE")
+                        api.getSpaceHistory(resourceId)
+                    else
+                        api.getEquipmentHistory(resourceId)
+
+                    if (historyResp.isSuccessful) {
+                        val existing = historyResp.body() ?: emptyList()
+                        val reqStart = "$startDate $startTime"
+                        val reqEnd   = "$endDate $endTime"
+
+                        val conflict = existing
+                            .filter { it.id != r.id }
+                            .filter { it.status == "PENDIENTE" || it.status == "APROBADA" }
+                            .any { ex ->
+                                val rStart = "${ex.reservationDate ?: ""} ${ex.startTime ?: ""}"
+                                val rEnd   = "${ex.endDate ?: ex.reservationDate ?: ""} ${ex.endTime ?: ""}"
+                                rStart < reqEnd && reqStart < rEnd
+                            }
+
+                        if (conflict) {
+                            AlertDialog.Builder(requireContext())
+                                .setTitle("No disponible")
+                                .setMessage("Este ${if (r.resourceType == "SPACE") "espacio" else "equipo"} ya tiene una solicitud activa en el horario seleccionado. Por favor elige otra fecha u horario.")
+                                .setPositiveButton("Entendido", null)
+                                .show()
+                            return@launch
+                        }
+                    }
+
                     val req = UpdateReservationRequest(
                         requesterId     = session.userId,
                         resourceType    = r.resourceType,
@@ -348,8 +380,7 @@ class MyRequestsFragment : Fragment() {
                         purpose         = purpose,
                         observations    = r.observations
                     )
-                    val resp = RetrofitClient.create(requireContext())
-                        .updateMyReservation(r.id, session.userId, req)
+                    val resp = api.updateMyReservation(r.id, session.userId, req)
                     if (resp.isSuccessful) {
                         dialog.dismiss()
                         Toast.makeText(requireContext(), "Solicitud actualizada correctamente", Toast.LENGTH_SHORT).show()

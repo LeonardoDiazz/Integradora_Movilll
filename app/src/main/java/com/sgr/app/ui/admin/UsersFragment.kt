@@ -1,7 +1,6 @@
 package com.sgr.app.ui.admin
 
 import android.app.AlertDialog
-import android.app.DatePickerDialog
 import android.os.Bundle
 import android.view.*
 import android.widget.*
@@ -144,29 +143,32 @@ class UsersFragment : Fragment() {
         val etPhone = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etPhone)
         val etPassword = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etPassword)
 
-        // Fecha de nacimiento — abre DatePickerDialog al tocar
-        etBirthDate.setOnClickListener {
-            val cal = java.util.Calendar.getInstance()
-            // Si ya tiene fecha, parsearla para abrir en esa fecha
-            val current = etBirthDate.text?.toString()
-            if (!current.isNullOrBlank()) {
-                try {
-                    val parts = current.split("-")
-                    if (parts.size == 3) {
-                        cal.set(parts[0].toInt(), parts[1].toInt() - 1, parts[2].toInt())
+        // Fecha de nacimiento — máscara AAAA/MM/DD con / insertadas automáticamente
+        etBirthDate.addTextChangedListener(object : android.text.TextWatcher {
+            private var isFormatting = false
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                if (isFormatting) return
+                isFormatting = true
+                val digits = s?.filter { it.isDigit() }?.take(8) ?: ""
+                val formatted = buildString {
+                    digits.forEachIndexed { i, c ->
+                        if (i == 4 || i == 6) append('/')
+                        append(c)
                     }
-                } catch (_: Exception) { }
+                }
+                s?.replace(0, s.length, formatted)
+                android.text.Selection.setSelection(s, formatted.length)
+                isFormatting = false
             }
-            DatePickerDialog(ctx, { _, year, month, day ->
-                etBirthDate.setText(String.format("%04d-%02d-%02d", year, month + 1, day))
-            }, cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH), cal.get(java.util.Calendar.DAY_OF_MONTH)).show()
-        }
+        })
 
         // Pre-llenar si es edición
         user?.let {
             etName.setText(it.name)
             etLastName.setText(it.lastName)
-            etBirthDate.setText(it.birthDate ?: "")
+            etBirthDate.setText((it.birthDate ?: "").replace('-', '/'))
             etIdentifier.setText(it.identifier ?: "")
             etEmail.setText(it.email)
             etPhone.setText(it.phone ?: "")
@@ -208,7 +210,7 @@ class UsersFragment : Fragment() {
             val email = etEmail.text.toString().trim()
             val password = etPassword.text.toString()
             val identifier = etIdentifier.text.toString().trim()
-            val birthDate = etBirthDate.text.toString().trim()
+            val birthDate = etBirthDate.text.toString().trim().replace('/', '-')
             val phone = etPhone.text.toString().trim()
             val selectedRole = roleValues[roleLabels.indexOf(actvRole.text.toString()).coerceAtLeast(0)]
             val selectedType = userTypeValues[userTypeLabels.indexOf(actvUserType.text.toString()).coerceAtLeast(0)]

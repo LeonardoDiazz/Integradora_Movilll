@@ -54,8 +54,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun showNetworkStatus(searching: Boolean, message: String) {
-        binding.progressNetwork.visibility = if (searching) View.VISIBLE else View.GONE
-        binding.tvNetworkStatus.text = message
+        // estado de red oculto
     }
 
     private fun doLogin() {

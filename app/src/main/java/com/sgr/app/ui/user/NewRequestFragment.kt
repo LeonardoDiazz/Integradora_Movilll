@@ -1,6 +1,11 @@
 package com.sgr.app.ui.user
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.style.StyleSpan
+import android.graphics.Typeface
 import android.view.*
 import android.widget.*
 import androidx.fragment.app.Fragment
@@ -15,6 +20,7 @@ import com.sgr.app.model.Space
 import com.sgr.app.network.RetrofitClient
 import com.sgr.app.utils.SessionManager
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 data class ResourceItem(
     val id: Long,
@@ -51,6 +57,11 @@ class NewRequestFragment : Fragment() {
 
         if (isStudent) binding.tvStudentNotice.visibility = View.VISIBLE
 
+        val noteText = "Nota importante: Todas las solicitudes se registran en estado Pendiente y no podrán ser editadas una vez aprobadas o rechazadas."
+        val spannable = SpannableString(noteText)
+        spannable.setSpan(StyleSpan(Typeface.BOLD), 0, "Nota importante:".length, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+        binding.tvImportantNote.text = spannable
+
         binding.recyclerResources.layoutManager = LinearLayoutManager(requireContext())
 
         // Tabs
@@ -80,7 +91,45 @@ class NewRequestFragment : Fragment() {
         // Submit
         binding.btnSubmit.setOnClickListener { submit() }
 
+        // Date / Time pickers
+        binding.etDate.setOnClickListener { showDatePicker { binding.etDate.setText(it) } }
+        binding.etEndDate.setOnClickListener { showDatePicker { binding.etEndDate.setText(it) } }
+        binding.etStartTime.setOnClickListener { showTimePicker({ binding.etStartTime.setText(it) }, maxHour = 21) }
+        binding.etEndTime.setOnClickListener { showTimePicker({ binding.etEndTime.setText(it) }, maxHour = 21) }
+
         loadResources()
+    }
+
+    private fun showDatePicker(onSelected: (String) -> Unit) {
+        val cal = Calendar.getInstance()
+        DatePickerDialog(
+            requireContext(),
+            { _, year, month, day ->
+                onSelected(String.format("%04d-%02d-%02d", year, month + 1, day))
+            },
+            cal.get(Calendar.YEAR),
+            cal.get(Calendar.MONTH),
+            cal.get(Calendar.DAY_OF_MONTH)
+        ).show()
+    }
+
+    private fun showTimePicker(onSelected: (String) -> Unit, maxHour: Int = 22) {
+        val cal = Calendar.getInstance()
+        TimePickerDialog(
+            requireContext(),
+            { _, hour, minute ->
+                if (hour < 7 || hour > maxHour || (hour == maxHour && minute > 0)) {
+                    Toast.makeText(requireContext(),
+                        "Horario permitido: 07:00 – ${"%02d:00".format(maxHour)}",
+                        Toast.LENGTH_SHORT).show()
+                } else {
+                    onSelected(String.format("%02d:%02d", hour, minute))
+                }
+            },
+            cal.get(Calendar.HOUR_OF_DAY),
+            cal.get(Calendar.MINUTE),
+            true
+        ).show()
     }
 
     private fun switchTab(tab: String) {
@@ -90,18 +139,18 @@ class NewRequestFragment : Fragment() {
         binding.btnContinue.isEnabled = false
 
         val green = android.content.res.ColorStateList.valueOf(0xFF00843D.toInt())
-        val inactive = android.content.res.ColorStateList.valueOf(0xFFF1F5F9.toInt())
+        val gray = android.content.res.ColorStateList.valueOf(0xFFF1F5F9.toInt())
         if (tab == "SPACE") {
             binding.btnTabSpace.backgroundTintList = green
             binding.btnTabSpace.setTextColor(0xFFFFFFFF.toInt())
-            binding.btnTabEquipment.backgroundTintList = inactive
+            binding.btnTabEquipment.backgroundTintList = gray
             binding.btnTabEquipment.setTextColor(0xFF6B7280.toInt())
             binding.etSearch.setText("")
             binding.etSearch.hint = "Buscar espacio..."
         } else {
             binding.btnTabEquipment.backgroundTintList = green
             binding.btnTabEquipment.setTextColor(0xFFFFFFFF.toInt())
-            binding.btnTabSpace.backgroundTintList = inactive
+            binding.btnTabSpace.backgroundTintList = gray
             binding.btnTabSpace.setTextColor(0xFF6B7280.toInt())
             binding.etSearch.setText("")
             binding.etSearch.hint = "Buscar equipo..."
@@ -184,34 +233,6 @@ class NewRequestFragment : Fragment() {
         binding.tvBannerTitle.text = res.name
         binding.tvBannerSub.text = "${res.meta} • ${if (res.resourceType == "SPACE") "Espacio" else "Equipo"}"
 
-        if (res.resourceType == "SPACE") {
-            binding.cardSpaceEquipment.visibility = View.VISIBLE
-            loadSpaceEquipment(res.id)
-        } else {
-            binding.cardSpaceEquipment.visibility = View.GONE
-        }
-    }
-
-    private fun loadSpaceEquipment(spaceId: Long) {
-        lifecycleScope.launch {
-            try {
-                val api = RetrofitClient.create(requireContext())
-                val resp = api.getEquipments(0, 50, "", "")
-                if (resp.isSuccessful) {
-                    val all = resp.body()?.content ?: emptyList()
-                    val filtered = all.filter { it.active == true }
-                    binding.rvSpaceEquipment.layoutManager = LinearLayoutManager(requireContext())
-                    if (filtered.isEmpty()) {
-                        binding.tvNoEquipment.visibility = View.VISIBLE
-                        binding.rvSpaceEquipment.visibility = View.GONE
-                    } else {
-                        binding.tvNoEquipment.visibility = View.GONE
-                        binding.rvSpaceEquipment.visibility = View.VISIBLE
-                        binding.rvSpaceEquipment.adapter = SpaceEquipmentAdapter(filtered)
-                    }
-                }
-            } catch (_: Exception) {}
-        }
     }
 
     private fun goToStep1() {
@@ -223,18 +244,35 @@ class NewRequestFragment : Fragment() {
     private fun submit() {
         val startDate = binding.etDate.text?.toString()?.trim() ?: ""
         val startTime = binding.etStartTime.text?.toString()?.trim() ?: ""
+        val endDate = binding.etEndDate.text?.toString()?.trim().takeIf { !it.isNullOrBlank() }
         val endTime = binding.etEndTime.text?.toString()?.trim() ?: ""
         val purpose = binding.etPurpose.text?.toString()?.trim() ?: ""
         val res = selectedResource ?: return
 
-        if (startDate.isEmpty() || startTime.isEmpty() || endTime.isEmpty() || purpose.isEmpty()) {
-            Toast.makeText(requireContext(), "Completa todos los campos", Toast.LENGTH_SHORT).show()
-            return
+        // Validación por campo
+        var hasError = false
+        binding.tilDate.error = if (startDate.isEmpty()) { hasError = true; "La fecha de inicio es obligatoria" } else null
+        binding.tilStartTime.error = if (startTime.isEmpty()) { hasError = true; "Obligatorio" } else null
+        binding.tilEndDate.error = if (endDate.isNullOrEmpty()) { hasError = true; "La fecha de devolución es obligatoria" } else null
+        binding.tilEndTime.error = if (endTime.isEmpty()) { hasError = true; "Obligatorio" } else null
+        binding.tilPurpose.error = when {
+            purpose.isEmpty() -> { hasError = true; "El motivo es obligatorio" }
+            purpose.length < 10 -> { hasError = true; "Mínimo 10 caracteres" }
+            else -> null
         }
-        if (purpose.length < 10) {
-            Toast.makeText(requireContext(), "El propósito debe tener al menos 10 caracteres", Toast.LENGTH_SHORT).show()
-            return
-        }
+        if (hasError) return
+
+        // Validar horarios permitidos
+        val startH = startTime.split(":").getOrNull(0)?.toIntOrNull() ?: 0
+        val startM = startTime.split(":").getOrNull(1)?.toIntOrNull() ?: 0
+        val endH   = endTime.split(":").getOrNull(0)?.toIntOrNull() ?: 0
+        val endM   = endTime.split(":").getOrNull(1)?.toIntOrNull() ?: 0
+        if (startH < 7 || startH > 21 || (startH == 21 && startM > 0)) {
+            binding.tilStartTime.error = "Horario: 07:00 – 21:00"; return
+        } else { binding.tilStartTime.error = null }
+        if (endH < 7 || endH > 21 || (endH == 21 && endM > 0)) {
+            binding.tilEndTime.error = "Horario: 07:00 – 21:00"; return
+        } else { binding.tilEndTime.error = null }
 
         val session = SessionManager(requireContext())
         binding.btnSubmit.isEnabled = false
@@ -242,14 +280,45 @@ class NewRequestFragment : Fragment() {
         lifecycleScope.launch {
             try {
                 val api = RetrofitClient.create(requireContext())
+
+                // Verificar disponibilidad antes de crear la solicitud
+                val historyResp = if (res.resourceType == "SPACE")
+                    api.getSpaceHistory(res.id)
+                else
+                    api.getEquipmentHistory(res.id)
+
+                if (historyResp.isSuccessful) {
+                    val existing = historyResp.body() ?: emptyList()
+                    val reqStart = "$startDate $startTime"
+                    val reqEnd   = "${endDate ?: startDate} $endTime"
+
+                    val conflict = existing
+                        .filter { it.status == "PENDIENTE" || it.status == "APROBADA" }
+                        .any { r ->
+                            val rStart = "${r.reservationDate ?: ""} ${r.startTime ?: ""}"
+                            val rEnd   = "${r.endDate ?: r.reservationDate ?: ""} ${r.endTime ?: ""}"
+                            rStart < reqEnd && reqStart < rEnd
+                        }
+
+                    if (conflict) {
+                        android.app.AlertDialog.Builder(requireContext())
+                            .setTitle("No disponible")
+                            .setMessage("Este ${if (res.resourceType == "SPACE") "espacio" else "equipo"} ya tiene una solicitud activa en el horario seleccionado. Por favor elige otra fecha u horario.")
+                            .setPositiveButton("Entendido", null)
+                            .show()
+                        binding.btnSubmit.isEnabled = true
+                        return@launch
+                    }
+                }
+
                 val response = api.createReservation(
                     CreateReservationRequest(
                         requesterId = session.userId,
                         resourceType = res.resourceType,
-                        spaceId = if (res.resourceType == "SPACE") res.id else null,
-                        equipmentId = if (res.resourceType == "EQUIPMENT") res.id else null,
+                        resourceId = res.id,
                         reservationDate = startDate,
                         startTime = startTime,
+                        endDate = endDate,
                         endTime = endTime,
                         purpose = purpose,
                         observations = null
@@ -311,41 +380,3 @@ class ResourceAdapter(
     }
 }
 
-class SpaceEquipmentAdapter(
-    private val items: List<Equipment>
-) : RecyclerView.Adapter<SpaceEquipmentAdapter.VH>() {
-
-    inner class VH(val view: View) : RecyclerView.ViewHolder(view)
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
-        VH(LayoutInflater.from(parent.context).inflate(R.layout.item_space_equipment, parent, false))
-
-    override fun getItemCount() = items.size
-
-    override fun onBindViewHolder(holder: VH, position: Int) {
-        val eq = items[position]
-        holder.view.apply {
-            findViewById<TextView>(R.id.tvEqName).text = eq.name
-            findViewById<TextView>(R.id.tvEqInv).text = eq.inventoryNumber
-
-            val tvCond = findViewById<TextView>(R.id.tvEqCondition)
-            when (eq.equipmentCondition) {
-                "DISPONIBLE" -> {
-                    tvCond.text = "Disponible"
-                    tvCond.setBackgroundResource(R.drawable.bg_badge_green)
-                    tvCond.setTextColor(0xFF065F46.toInt())
-                }
-                "EN_USO" -> {
-                    tvCond.text = "En uso"
-                    tvCond.setBackgroundResource(R.drawable.bg_badge_yellow)
-                    tvCond.setTextColor(0xFF92400E.toInt())
-                }
-                else -> {
-                    tvCond.text = "Mantenimiento"
-                    tvCond.setBackgroundResource(R.drawable.bg_badge_red)
-                    tvCond.setTextColor(0xFF991B1B.toInt())
-                }
-            }
-        }
-    }
-}
