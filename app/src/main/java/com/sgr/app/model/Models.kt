@@ -16,7 +16,8 @@ data class LoginResponse(
     val name: String,
     val lastName: String,
     val email: String,
-    val role: String
+    val role: String,
+    val phone: String? = null
 )
 
 // Deserializer que acepta tanto "YYYY-MM-DD" como [year, month, day] del backend

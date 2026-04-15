@@ -30,15 +30,20 @@ class SessionManager(context: Context) {
         get() = prefs.getString("userRole", null)
         set(value) = prefs.edit().putString("userRole", value).apply()
 
+    var userPhone: String?
+        get() = prefs.getString("userPhone", null)
+        set(value) = prefs.edit().putString("userPhone", value).apply()
+
     val isLoggedIn: Boolean get() = token != null
 
-    fun save(token: String, userId: Long, name: String, lastName: String, email: String, role: String) {
+    fun save(token: String, userId: Long, name: String, lastName: String, email: String, role: String, phone: String? = null) {
         this.token = token
         this.userId = userId
         this.userName = name
         this.userLastName = lastName
         this.userEmail = email
         this.userRole = role
+        this.userPhone = phone
     }
 
     fun clear() {

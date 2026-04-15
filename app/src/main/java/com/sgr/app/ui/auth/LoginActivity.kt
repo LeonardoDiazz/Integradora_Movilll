@@ -76,7 +76,7 @@ class LoginActivity : AppCompatActivity() {
                 val response = api.login(LoginRequest(email, password))
                 if (response.isSuccessful) {
                     val body = response.body()!!
-                    session.save(body.token, body.userId, body.name, body.lastName, body.email, body.role)
+                    session.save(body.token, body.userId, body.name, body.lastName, body.email, body.role, body.phone)
                     navigateByRole(body.role)
                 } else {
                     // Leer el mensaje real del backend
@@ -95,7 +95,7 @@ class LoginActivity : AppCompatActivity() {
                     val response = api.login(LoginRequest(email, password))
                     if (response.isSuccessful) {
                         val body = response.body()!!
-                        session.save(body.token, body.userId, body.name, body.lastName, body.email, body.role)
+                        session.save(body.token, body.userId, body.name, body.lastName, body.email, body.role, body.phone)
                         navigateByRole(body.role)
                         return@launch
                     } else {

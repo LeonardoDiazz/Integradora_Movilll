@@ -139,6 +139,9 @@ interface ApiService {
     ): Response<ResponseBody>
 
     // PROFILE
+    @GET("api/users/profile/{userId}")
+    suspend fun getProfile(@Path("userId") userId: Long): Response<User>
+
     @PUT("api/users/profile/{userId}")
     suspend fun updateProfile(
         @Path("userId") userId: Long,

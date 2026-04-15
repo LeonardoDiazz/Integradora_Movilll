@@ -47,10 +47,29 @@ class ProfileFragment : Fragment() {
         binding.tvEmailValue.text = session.userEmail ?: "—"
         binding.tvRoleValue.text = roleLabel
 
+        // Cargar teléfono desde la API (endpoint accesible a todos los autenticados)
+        lifecycleScope.launch {
+            try {
+                val api = RetrofitClient.create(requireContext())
+                val response = api.getProfile(session.userId)
+                if (response.isSuccessful) {
+                    val user = response.body()
+                    val phone = user?.phone?.takeIf { it.isNotBlank() }
+                    session.userPhone = phone
+                    binding.tvPhoneValue.text = phone ?: "Sin teléfono registrado"
+                }
+            } catch (_: Exception) { }
+        }
+
+        // Mostrar teléfono guardado en sesión mientras carga
+        binding.tvPhoneValue.text = session.userPhone?.takeIf { it.isNotBlank() } ?: "Sin teléfono registrado"
+
         // Teléfono
         binding.btnEditPhone.setOnClickListener {
             binding.layoutEditPhone.visibility = View.VISIBLE
             binding.btnEditPhone.visibility = View.GONE
+            val current = session.userPhone?.takeIf { it.isNotBlank() }
+            if (current != null) binding.etPhone.setText(current)
         }
         binding.btnCancelPhone.setOnClickListener {
             binding.layoutEditPhone.visibility = View.GONE
@@ -71,6 +90,7 @@ class ProfileFragment : Fragment() {
                         UpdateProfileRequest(session.userName ?: "", session.userLastName ?: "", phone.ifBlank { null })
                     )
                     if (response.isSuccessful) {
+                        session.userPhone = phone.ifBlank { null }
                         binding.tvPhoneValue.text = phone.ifBlank { "Sin teléfono registrado" }
                         binding.layoutEditPhone.visibility = View.GONE
                         binding.btnEditPhone.visibility = View.VISIBLE

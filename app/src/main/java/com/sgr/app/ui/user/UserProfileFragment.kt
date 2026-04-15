@@ -45,9 +45,28 @@ class UserProfileFragment : Fragment() {
         binding.tvEmailValue.text = session.userEmail ?: "—"
         binding.tvRoleValue.text = roleLabel
 
+        // Mostrar teléfono guardado en sesión mientras carga
+        binding.tvPhoneValue.text = session.userPhone?.takeIf { it.isNotBlank() } ?: "Sin teléfono registrado"
+
+        // Cargar teléfono actualizado desde la API (endpoint accesible a todos los autenticados)
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.create(requireContext()).getProfile(session.userId)
+                if (response.isSuccessful) {
+                    val user = response.body()
+                    val phone = user?.phone?.takeIf { it.isNotBlank() }
+                    session.userPhone = phone
+                    binding.tvPhoneValue.text = phone ?: "Sin teléfono registrado"
+                }
+            } catch (_: Exception) { }
+        }
+
         binding.btnEditPhone.setOnClickListener {
             binding.layoutEditPhone.visibility = View.VISIBLE
             binding.btnEditPhone.visibility = View.GONE
+            // Pre-llenar con el teléfono actual
+            val current = session.userPhone?.takeIf { it.isNotBlank() }
+            if (current != null) binding.etPhone.setText(current)
         }
         binding.btnCancelPhone.setOnClickListener {
             binding.layoutEditPhone.visibility = View.GONE
@@ -67,7 +86,9 @@ class UserProfileFragment : Fragment() {
                         UpdateProfileRequest(session.userName ?: "", session.userLastName ?: "", phone.ifBlank { null })
                     )
                     if (response.isSuccessful) {
-                        binding.tvPhoneValue.text = phone.ifBlank { "Sin teléfono registrado" }
+                        val saved = phone.ifBlank { null }
+                        session.userPhone = saved
+                        binding.tvPhoneValue.text = saved ?: "Sin teléfono registrado"
                         binding.layoutEditPhone.visibility = View.GONE
                         binding.btnEditPhone.visibility = View.VISIBLE
                         binding.etPhone.text?.clear()
